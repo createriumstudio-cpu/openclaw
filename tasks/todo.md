@@ -58,6 +58,14 @@
 - [x] スラッシュコマンドハンドラ（`src/line-ai-partner/command-handler.ts`）
 - [x] OpenClaw統合レイヤー（`src/line-ai-partner/integration.ts`）
 
+### 外部サービス統合（Phase 3）
+
+- [x] OAuth2フロー管理（`integrations/oauth-manager.ts`）
+- [x] Google Calendar連携（`integrations/google-calendar.ts`）
+- [x] Google Drive連携（`integrations/google-drive.ts`）
+- [x] Notion連携（`integrations/notion.ts`）
+- [x] 統合バレルエクスポート（`integrations/index.ts`）
+
 ### リッチ UI
 
 - [ ] Flex Message テンプレートの拡張（対話型カード等）

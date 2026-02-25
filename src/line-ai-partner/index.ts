@@ -62,3 +62,17 @@ export {
   getSoulContext,
   buildMorningGreeting,
 } from "./integration.js";
+
+// Phase 3: External service integrations
+export type { TokenSet, CalendarEvent, DriveFile, NotionPage } from "./integrations/index.js";
+export {
+  initiateOAuth,
+  handleCallback,
+  getConnectedServices,
+  getTodaySchedule,
+  createEvent,
+  searchFiles,
+  getFileContent,
+  queryDatabase,
+  createPage,
+} from "./integrations/index.js";
