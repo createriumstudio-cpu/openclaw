@@ -45,6 +45,13 @@
 - [ ] マルチターン会話の最適化
 - [ ] 感情分析に基づく応答調整
 
+### デイリーアシスタント＆Cron通知（Phase 2-B）
+
+- [x] 天気情報取得サービス（`src/line-ai-partner/weather-service.ts`）
+- [x] デイリーレポート生成（`src/line-ai-partner/daily-assistant.ts`）
+- [x] Cronジョブ管理・リマインダー（`src/line-ai-partner/cron-manager.ts`）
+- [x] Flex Messageテンプレート集（`src/line-ai-partner/flex-templates.ts`）
+
 ### リッチ UI
 
 - [ ] Flex Message テンプレートの拡張（対話型カード等）
