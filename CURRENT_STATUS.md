@@ -1,17 +1,17 @@
 # LINE AIパートナー — 現時点の状態
 
-> 最終更新: 2026-02-25
+> 最終更新: 2026-02-25（Phase 7補完後）
 
 ---
 
 ## ブランチ・コミット情報
 
-| 項目                 | 値                                         |
-| -------------------- | ------------------------------------------ |
-| ブランチ             | `claude/line-ai-partner-setup-9hqMV`       |
-| 最新コミットハッシュ | `b6e3ab4c246c18b78c9b072982ed3fc169239b7e` |
-| コミット数           | 9（ベースブランチから）                    |
-| ベースブランチ       | `main`                                     |
+| 項目                 | 値                                   |
+| -------------------- | ------------------------------------ |
+| ブランチ             | `claude/line-ai-partner-setup-9hqMV` |
+| 最新コミットハッシュ | `4dd0d52`                            |
+| コミット数           | 11（ベースブランチから）             |
+| ベースブランチ       | `main`                               |
 
 ---
 
@@ -36,34 +36,36 @@
 
 ## 何が動く状態か
 
-### 動作するもの（テスト済み）
+### 動作するもの（テスト済み・実装済み）
 
-| 機能                        | ファイル             | 状態                                         |
-| --------------------------- | -------------------- | -------------------------------------------- |
-| SOUL.md動的生成             | `soul-generator.ts`  | 100通りの組み合わせでMarkdown生成            |
-| オンボーディングフロー      | `onboarding.ts`      | 全遷移パス (new -> complete)                 |
-| メッセージルーティング      | `message-router.ts`  | 意図検出+コマンド+会話ルーティング           |
-| スラッシュコマンド          | `command-handler.ts` | /help, /setting, /weather, /remind等         |
-| プラン定義+機能ゲーティング | `billing/plans.ts`   | Free/Standard/Premium                        |
-| デイリーレポート生成        | `daily-assistant.ts` | 天気+予定+服装のフォーマット                 |
-| Flex Messageテンプレート    | `flex-templates.ts`  | レポート/オンボーディング/リマインダーカード |
-| OpenClaw型整合              | `types.ts`           | LineConfig/ResolvedLineAccount再エクスポート |
-| OpenClaw Webhook橋渡し      | `integration.ts`     | processPartnerMessage(LineInboundContext)    |
-| OpenClawメモリ検索          | `memory-manager.ts`  | searchConversationMemory()                   |
+| 機能                         | ファイル                  | 状態                                             |
+| ---------------------------- | ------------------------- | ------------------------------------------------ |
+| SOUL.md動的生成              | `soul-generator.ts`       | 100通りの組み合わせでMarkdown生成                |
+| オンボーディングフロー       | `onboarding.ts`           | 全遷移パス (new -> complete)                     |
+| メッセージルーティング       | `message-router.ts`       | 意図検出+コマンド+会話ルーティング               |
+| スラッシュコマンド           | `command-handler.ts`      | /help, /setting, /weather, /remind等             |
+| プラン定義+機能ゲーティング  | `billing/plans.ts`        | Free/Standard/Premium                            |
+| デイリーレポート生成         | `daily-assistant.ts`      | 天気+予定+服装のフォーマット                     |
+| Flex Messageテンプレート     | `flex-templates.ts`       | レポート/オンボーディング/リマインダーカード     |
+| OpenClaw型整合               | `types.ts`                | LineConfig/ResolvedLineAccount再エクスポート     |
+| OpenClaw Webhook橋渡し       | `integration.ts`          | processPartnerMessage(LineInboundContext)        |
+| OpenClawメモリ検索           | `memory-manager.ts`       | searchConversationMemory()                       |
+| **LLM会話応答**              | `message-router.ts`       | runEmbeddedPiAgent + SOUL.md extraSystemPrompt   |
+| **Gateway登録**              | `monitor.ts`+`channel.ts` | processMessage option + aiPartner.enabled config |
+| **Cron実行エンジン**         | `cron-manager.ts`         | setInterval 60s tick, morning greeting callbacks |
+| **Stripe署名検証**           | `stripe-service.ts`       | HMAC-SHA256 + timing-safe comparison             |
+| **天気API（mock fallback）** | `weather-service.ts`      | API key未設定時は季節ベースmockデータ返却        |
+| **天気予報（3日間）**        | `weather-service.ts`      | getWeatherForecast() 実装済み                    |
 
-### まだ動かないもの（未接続/未実装）
+### まだ動かないもの（外部サービス設定待ち）
 
-| 機能                               | 理由                     | 必要な作業                                            |
-| ---------------------------------- | ------------------------ | ----------------------------------------------------- |
-| LINE Webhookからの実メッセージ受信 | LINE Developers未設定    | Phase 7: Console設定+Webhook URL                      |
-| AI応答生成（LLM）                  | LLM呼び出し未実装        | `message-router.ts` の "conversation" ケースにLLM接続 |
-| Cron実行（リマインダー/朝挨拶）    | 実行エンジン未実装       | setInterval/node-cronの導入                           |
-| processPartnerMessageのgateway登録 | channel.tsへの接続未実施 | extensions/line/src/channel.tsに登録                  |
-| 天気API実呼び出し                  | APIキー未設定            | OPENWEATHERMAP_API_KEY設定                            |
-| Google Calendar/Drive              | OAuth未設定              | Google Cloud Console設定                              |
-| Notion連携                         | OAuth未設定              | Notion Integration設定                                |
-| Stripe課金                         | 本番キー未設定           | Stripe Dashboard設定                                  |
-| Stripe Webhook署名検証             | 未実装                   | stripe-service.tsに追加                               |
+| 機能                           | 理由                  | 必要な作業                       |
+| ------------------------------ | --------------------- | -------------------------------- |
+| LINE Webhookからの実メッセージ | LINE Developers未設定 | Console設定+Webhook URL+ドメイン |
+| 天気API実データ                | APIキー未設定         | OPENWEATHERMAP_API_KEY設定       |
+| Google Calendar/Drive          | OAuth未設定           | Google Cloud Console設定         |
+| Notion連携                     | OAuth未設定           | Notion Integration設定           |
+| Stripe課金（本番）             | 本番キー未設定        | Stripe Dashboard設定             |
 
 ---
 

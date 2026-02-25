@@ -85,7 +85,7 @@
 
 ---
 
-## Phase 7: LINE Developers Console設定 + Webhook接続 [未着手]
+## Phase 7: LINE Developers Console設定 + Webhook接続 [コード実装完了]
 
 - [ ] LINE Developers Consoleでチャンネル作成
 - [ ] チャンネルアクセストークン発行
@@ -95,7 +95,19 @@
 - [ ] 応答メッセージをOFFに切り替え
 - [ ] OpenClaw config設定（channelAccessToken, channelSecret）
 - [ ] `openclaw channels status --probe` で接続確認
-- [ ] processPartnerMessageをextensions/line/src/channel.tsに登録
+- [x] processPartnerMessageをextensions/line/src/channel.tsに登録（`4dd0d52`で実装）
+- [x] monitor.tsにprocessMessage optionを追加（`4dd0d52`で実装）
+- [x] channels.line.aiPartner.enabled configでAI Partner切り替え（`4dd0d52`で実装）
+
+## Phase 7補完: コード実装 [完了]
+
+- [x] LLM会話応答: message-router.ts → runEmbeddedPiAgent + SOUL.md extraSystemPrompt
+- [x] Gateway登録: monitor.ts processMessage option + channel.ts aiPartner.enabled
+- [x] Cron実行エンジン: startCronEngine(callbacks) / stopCronEngine() 60s interval
+- [x] Stripe Webhook署名検証: verifyWebhookSignature() HMAC-SHA256
+- [x] 天気API mock fallback: APIキー未設定時は季節ベースmockデータ
+- [x] 天気予報: getWeatherForecast() 3日間forecast
+- [x] テスト更新: message-router.test.ts conversation case（LLM fallback対応）
 
 ## Phase 8: 外部API実接続 [未着手]
 
@@ -106,14 +118,11 @@
 - [ ] Google Drive連携テスト
 - [ ] Notion Integration作成+OAuth設定
 - [ ] Notion連携テスト
-- [ ] AI応答生成のLLM接続（message-router.ts "conversation" ケース）
-- [ ] Cron実行エンジン実装（setInterval/node-cron）
 
 ## Phase 9: Stripe本番設定 + サブスク課金フロー [未着手]
 
 - [ ] Stripe Dashboardで商品・価格作成（Standard 980円, Premium 1980円）
 - [ ] Stripe本番キー取得+設定
-- [ ] Stripe Webhook署名検証の実装
 - [ ] `/subscribe` コマンド実装
 - [ ] `/plan` コマンド実装
 - [ ] 課金ステータス変更時のLINE通知実装
@@ -152,14 +161,16 @@
 
 ## 優先度の高い課題
 
-| 課題                        | 優先度 | 備考                                         |
-| --------------------------- | ------ | -------------------------------------------- |
-| LINE Developers Console設定 | 最高   | Phase 7 — 本番接続の前提                     |
-| AI応答生成のLLM接続         | 高     | message-router.ts "conversation" ケース      |
-| processPartnerMessage登録   | 高     | channel.tsのprocessMessageコールバックに接続 |
-| fly.ioデプロイ              | 高     | Phase 10                                     |
-| Stripe Webhook署名検証      | 高     | セキュリティ必須                             |
-| Cron実行エンジン            | 中     | リマインダー/朝挨拶の実行基盤                |
+| 課題                          | 優先度   | 備考                                        |
+| ----------------------------- | -------- | ------------------------------------------- |
+| LINE Developers Console設定   | 最高     | Phase 7 — 本番接続の前提                    |
+| fly.ioデプロイ                | 高       | Phase 10                                    |
+| 外部APIキー設定               | 中       | OpenWeatherMap, Google, Notion              |
+| Stripe本番設定                | 高       | Dashboard+商品作成+Webhook endpoint         |
+| ~~AI応答生成のLLM接続~~       | ~~完了~~ | `4dd0d52` で runEmbeddedPiAgent接続済み     |
+| ~~processPartnerMessage登録~~ | ~~完了~~ | `4dd0d52` で monitor.ts+channel.ts実装済み  |
+| ~~Stripe Webhook署名検証~~    | ~~完了~~ | `4dd0d52` で verifyWebhookSignature実装済み |
+| ~~Cron実行エンジン~~          | ~~完了~~ | `4dd0d52` で startCronEngine実装済み        |
 
 ---
 

@@ -73,6 +73,60 @@
 
 ---
 
+## 2026-02-25: Phase 7補完 — LLM接続・Gateway登録・実行エンジン
+
+### LLM接続（runEmbeddedPiAgent）
+
+**状況**: `message-router.ts` の "conversation" ケースにLLM呼び出しを接続する必要があった
+**対応**: OpenClawの `runEmbeddedPiAgent` を使用。以下がポイント:
+
+- `extraSystemPrompt` パラメータにSOUL.mdの動的生成結果を渡すことで、キャラクター人格を制御
+- `disableTools: true` で tool use を無効化し、純粋な会話応答に限定
+- `sessionFile` をユーザーごと（`~/.openclaw/line-ai-partner/sessions/<userId>.jsonl`）に分離し、会話履歴を維持
+- `messageChannel: "line"` を指定することで、LINE向けフォーマット（markdown非対応）が適用される
+- `timeoutMs: 30_000` で30秒タイムアウト（LINE応答遅延対策）
+  **学び**: `runEmbeddedPiAgent` は重量級だが、`disableTools` + `extraSystemPrompt` で軽量なLLM呼び出しとしても使える。sessionFileにより会話コンテキストが自動的に永続化される
+
+### Gateway登録（processMessage hook）
+
+**状況**: `processPartnerMessage` をLINEのwebhookフローに登録する方法が必要だった
+**対応**: `MonitorLineProviderOptions` に `processMessage?: (ctx: LineInboundContext) => Promise<void>` を追加
+
+- `monitorLineProvider` の `createLineBot` の `onMessage` 内で、`customProcessMessage` が設定されていれば先に呼び出し、default auto-replyをスキップ
+- `extensions/line/src/channel.ts` で `channels.line.aiPartner.enabled` configを参照し、lazy importで `processPartnerMessage` を取得
+  **学び**: `LineInboundContext` は `plugin-sdk` からエクスポートされていない。extension側では `any` 型で受け取り、core側の型定義に依存する回避策を使用。将来的にはplugin-sdkへのエクスポート追加が望ましい
+
+### Cron実行エンジン
+
+**状況**: `cron-manager.ts` はデータ永続化のみで、実際のスケジュール実行がなかった
+**対応**: `setInterval` ベースで60秒ごとにtickする軽量エンジンを実装
+
+- `startCronEngine(callbacks)` / `stopCronEngine()` のシンプルなAPI
+- コールバック方式（`onMorningGreeting`, `onReminder`）で実行ロジックを外部注入
+- 朝挨拶はHH:MM完全一致、リマインダーはcron式 "MM HH \* \* \*" パターンマッチ
+  **学び**: node-cronを追加する代わりにsetIntervalで十分。依存追加なしで実装でき、cron式のパースも「分と時のみ」で簡潔
+
+### Stripe Webhook署名検証
+
+**状況**: `handleWebhook()` が署名検証なしでイベントを処理していた
+**対応**: `verifyWebhookSignature()` を実装（HMAC-SHA256 + timing-safe comparison）
+
+- Stripe-Signatureヘッダーの `t=timestamp,v1=signature` パース
+- timestamp toleranceチェック（デフォルト300秒）
+- `timingSafeEqual` による定数時間比較
+  **学び**: Stripe SDKの `constructEvent` を使わず自前実装した理由は、Stripe SDKへの依存を避けるため。HMAC-SHA256の仕組みはシンプルで、`node:crypto` だけで完結する
+
+### 天気API mock fallback
+
+**状況**: `getWeather()` がAPIキー未設定時にエラーを投げていた
+**対応**: APIキー未設定時は季節ベースのmockデータを返すように変更
+
+- 月ごとの気温ベースライン（東京基準）+ 地名ハッシュによるバリエーション
+- `getWeatherForecast()` も追加（3日間予報）
+  **学び**: 開発環境で外部APIキーなしでもフルフロー動作確認ができるようになった。mockデータでもUI/UXのテストには十分
+
+---
+
 ## テンプレート: 新しい知見の記録
 
 ```markdown
@@ -120,13 +174,13 @@
 
 ### （テンプレート）
 
-| 項目 | 内容 |
-|------|------|
-| 発生日 | YYYY-MM-DD |
-| 症状 | - |
-| 原因 | - |
-| 解決策 | - |
-| 再発防止 | - |
+| 項目     | 内容       |
+| -------- | ---------- |
+| 発生日   | YYYY-MM-DD |
+| 症状     | -          |
+| 原因     | -          |
+| 解決策   | -          |
+| 再発防止 | -          |
 
 ---
 
@@ -134,10 +188,10 @@
 
 ### 決定事項ログ
 
-| 日付 | 決定事項 | 理由 | 代替案 |
-|------|----------|------|--------|
-| 2026-02-25 | 既存2層アーキテクチャを維持 | プラグインシステムとの整合性、他チャンネルとの統一性 | モノリシック統合 |
-| 2026-02-25 | 日本語をプロジェクト管理の主要言語に | 対象市場（日本）、開発チームの言語 | 英語のみ |
+| 日付       | 決定事項                             | 理由                                                 | 代替案           |
+| ---------- | ------------------------------------ | ---------------------------------------------------- | ---------------- |
+| 2026-02-25 | 既存2層アーキテクチャを維持          | プラグインシステムとの整合性、他チャンネルとの統一性 | モノリシック統合 |
+| 2026-02-25 | 日本語をプロジェクト管理の主要言語に | 対象市場（日本）、開発チームの言語                   | 英語のみ         |
 
 ---
 

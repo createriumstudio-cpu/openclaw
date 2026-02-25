@@ -1,8 +1,8 @@
 # LINE AIパートナー — AIエージェント引き継ぎドキュメント
 
-> 最終更新: 2026-02-25
+> 最終更新: 2026-02-25（Phase 7補完後）
 > ブランチ: `claude/line-ai-partner-setup-9hqMV`
-> 最新コミット: `b6e3ab4`
+> 最新コミット: `4dd0d52`
 
 ---
 
@@ -119,19 +119,21 @@ LINE Platform -> ユーザーに配信
 
 ## 5. 残タスク一覧
 
-| タスク                              | 状態   | 優先度 |
-| ----------------------------------- | ------ | ------ |
-| LINE Developers Console設定         | 未着手 | 最高   |
-| Webhook URL設定（ドメイン取得+SSL） | 未着手 | 最高   |
-| Stripe本番キー取得・設定            | 未着手 | 高     |
-| Google OAuth設定（Calendar/Drive）  | 未着手 | 中     |
-| Notion統合設定（OAuth App登録）     | 未着手 | 中     |
-| OpenWeatherMap APIキー取得          | 未着手 | 中     |
-| fly.io / Railwayデプロイ            | 未着手 | 高     |
-| AI応答生成のLLM接続                 | 未着手 | 高     |
-| Cron実行エンジン実装                | 未着手 | 中     |
-| E2Eテスト                           | 未着手 | 中     |
-| 本番監視・アラート設定              | 未着手 | 高     |
+| タスク                              | 状態     | 優先度 |
+| ----------------------------------- | -------- | ------ |
+| LINE Developers Console設定         | 未着手   | 最高   |
+| Webhook URL設定（ドメイン取得+SSL） | 未着手   | 最高   |
+| Stripe本番キー取得・設定            | 未着手   | 高     |
+| Google OAuth設定（Calendar/Drive）  | 未着手   | 中     |
+| Notion統合設定（OAuth App登録）     | 未着手   | 中     |
+| OpenWeatherMap APIキー取得          | 未着手   | 中     |
+| fly.io / Railwayデプロイ            | 未着手   | 高     |
+| ~~AI応答生成のLLM接続~~             | **完了** | ~~高~~ |
+| ~~Cron実行エンジン実装~~            | **完了** | ~~中~~ |
+| ~~processPartnerMessage登録~~       | **完了** | ~~高~~ |
+| ~~Stripe Webhook署名検証~~          | **完了** | ~~高~~ |
+| E2Eテスト                           | 未着手   | 中     |
+| 本番監視・アラート設定              | 未着手   | 高     |
 
 ---
 
@@ -183,7 +185,7 @@ src/line-ai-partner/
 
 ---
 
-## 7. コミット履歴サマリー（9コミット）
+## 7. コミット履歴サマリー（11コミット）
 
 | #   | ハッシュ  | メッセージ                                                   | 内容                                                                       |
 | --- | --------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
@@ -196,6 +198,8 @@ src/line-ai-partner/
 | 7   | `2269750` | feat: Phase 4 マネタイズ（Stripe）+デプロイ設定              | billing/_.ts, deploy/_                                                     |
 | 8   | `34b9197` | feat: Phase 5 テスト+ドキュメント完成                        | \*.test.ts (4ファイル, 36テスト), docs/                                    |
 | 9   | `b6e3ab4` | fix: OpenClaw既存コードとの実結合+型整合                     | types/memory/integrationをOpenClawコアに接続                               |
+| 10  | `b64902f` | docs: AIエージェント引き継ぎドキュメント完備                 | HANDOFF.md, ROADMAP.md, CURRENT_STATUS.md, DEBUG_GUIDE.md                  |
+| 11  | `4dd0d52` | feat: Phase 7補完 — LLM接続・gateway登録・Cron・Stripe・天気 | monitor.ts processMessage, channel.ts aiPartner, LLM callLLM, cron engine  |
 
 ---
 
@@ -203,11 +207,16 @@ src/line-ai-partner/
 
 ### コード上の制約
 
-- **AI応答生成は未接続**: `message-router.ts` の `"conversation"` ケースはプレースホルダー。実際のLLM呼び出しは未実装
-- **Cron実行エンジン未実装**: `cron-manager.ts` はデータ永続化のみ。実際のCron実行（setInterval/node-cron等）は未実装
-- **外部API未テスト**: Google/Notion/Weather APIは型定義とフロー実装のみ。実際のAPIキーでの動作確認は未実施
-- **Stripe Webhook署名検証未実装**: `handleWebhook()` は署名検証なしでイベント処理
-- **processPartnerMessage未登録**: `extensions/line/src/channel.ts` の `processMessage` コールバックへの実際の登録はまだ行われていない
+- **外部APIキー未設定**: Google/Notion/Weather（実API）/Stripe（本番）はAPIキー設定後に動作する
+- `@line/bot-sdk` の `messagingApi.FlexContainer` 型へのキャストが必要な箇所あり
+
+### Phase 7補完で実装済み（以前は未実装だったもの）
+
+- **LLM会話応答**: `message-router.ts` の `"conversation"` ケースが `runEmbeddedPiAgent` に接続済み。SOUL.mdを `extraSystemPrompt` として渡す
+- **Gateway登録**: `src/line/monitor.ts` に `processMessage` option追加、`extensions/line/src/channel.ts` で `channels.line.aiPartner.enabled` config対応
+- **Cron実行エンジン**: `cron-manager.ts` に `startCronEngine(callbacks)` / `stopCronEngine()` 追加。60秒間隔で朝挨拶+リマインダーを発火
+- **Stripe Webhook署名検証**: `verifyWebhookSignature()` でHMAC-SHA256+timing-safe comparison
+- **天気API mock fallback**: APIキー未設定時は季節ベースmockデータ、`getWeatherForecast()` も追加
 
 ### OpenClaw統合の注意点
 

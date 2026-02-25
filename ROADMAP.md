@@ -7,9 +7,10 @@
 ## 現在の状態
 
 - **Phase 1-6 完了**: スケルトン実装+OpenClaw実結合済み
+- **Phase 7 コード実装完了**: LLM接続・gateway登録・Cron実行・Stripe署名検証・天気API全て実装済み
 - **本番未デプロイ**: LINE Developers設定・Webhook接続・APIキー設定が未実施
 - **テスト**: 36テスト全パス、tsc --noEmit ゼロエラー、lint clean
-- **AI応答**: SOUL.md生成は実装済みだが、実際のLLM呼び出しは未接続
+- **AI応答**: `runEmbeddedPiAgent` + SOUL.md `extraSystemPrompt` で接続済み
 
 ---
 
@@ -114,7 +115,7 @@ export STRIPE_WEBHOOK_SECRET="whsec_..."
 
 ### 実装が必要な項目
 
-- [ ] `stripe-service.ts` にWebhook署名検証を追加
+- [x] `stripe-service.ts` にWebhook署名検証を追加（Phase 7補完で実装済み: `verifyWebhookSignature()`）
 - [ ] `/subscribe` コマンドの実装（Checkout Sessionリンク生成）
 - [ ] `/plan` コマンドの実装（現在のプラン表示）
 - [ ] 課金ステータス変更時のLINE通知
