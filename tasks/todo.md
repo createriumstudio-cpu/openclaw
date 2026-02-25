@@ -52,6 +52,12 @@
 - [x] Cronジョブ管理・リマインダー（`src/line-ai-partner/cron-manager.ts`）
 - [x] Flex Messageテンプレート集（`src/line-ai-partner/flex-templates.ts`）
 
+### メッセージルーティング＆統合（Phase 2-C）
+
+- [x] メッセージルーター（`src/line-ai-partner/message-router.ts`）
+- [x] スラッシュコマンドハンドラ（`src/line-ai-partner/command-handler.ts`）
+- [x] OpenClaw統合レイヤー（`src/line-ai-partner/integration.ts`）
+
 ### リッチ UI
 
 - [ ] Flex Message テンプレートの拡張（対話型カード等）

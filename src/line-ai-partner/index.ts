@@ -48,3 +48,17 @@ export {
   createOnboardingCard,
   createReminderCard,
 } from "./flex-templates.js";
+
+// Phase 2-C: Message routing & integration
+export { routeMessage, type RouterResponse } from "./message-router.js";
+export {
+  isCommand,
+  handleCommand,
+  type CommandResponse,
+} from "./command-handler.js";
+export type { LinePartnerEvent, LineOutboundMessage } from "./integration.js";
+export {
+  processEvent,
+  getSoulContext,
+  buildMorningGreeting,
+} from "./integration.js";
