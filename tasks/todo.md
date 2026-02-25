@@ -11,54 +11,39 @@
 
 ---
 
-## フェーズ 1: 基盤整備・現状把握
+## Phase 1: 基盤整備・現状把握 [完了]
 
 - [x] 既存 LINE インテグレーションのコード調査
 - [x] アーキテクチャ全体像の把握（コア層 `src/line/` + プラグイン層 `extensions/line/`）
 - [x] テストカバレッジの確認（15テストファイル、約2,249 LOC）
 - [x] プロジェクト管理ファイルの作成
-- [x] マルチテナント対応設定ファイル作成（`config/line-ai-partner.json`）
-- [x] オンボーディングフローのスキル作成（`skills/line-onboarding/SKILL.md`）
-- [x] SOUL.md テンプレート作成（`templates/SOUL_TEMPLATE.md`）
-- [x] デイリーアシスタントスキル作成（`skills/daily-assistant/SKILL.md`）
-- [ ] 開発環境のセットアップ手順書作成
-- [ ] LINE Developers Console の設定確認
+- [x] マルチテナント対応設定ファイル作成
+- [x] オンボーディングフローのスキル作成
+- [x] SOUL.md テンプレート作成
+- [x] デイリーアシスタントスキル作成
 
-## フェーズ 2: コア機能の強化
-
-### メッセージング基盤
-
-- [ ] Postback イベントハンドリングの拡充（現状カバレッジが薄い）
-- [ ] グループ参加/退出イベント（`JoinEvent`/`LeaveEvent`）の処理追加
-- [ ] Quick Reply アイテム数の上限バリデーション追加（LINE API上限: 13件）
-- [ ] Flex Message の事前バリデーション機能追加
-- [ ] 動画メッセージ送信（`createVideoMessage`）の実装
-
-### AI パートナー機能（Phase 2-A）
+## Phase 2-A: AIパートナーコアエンジン [完了]
 
 - [x] 型定義の実装（`src/line-ai-partner/types.ts`）
 - [x] SOUL.md 動的生成エンジン（`src/line-ai-partner/soul-generator.ts`）
 - [x] オンボーディングフロー実装（`src/line-ai-partner/onboarding.ts`）
 - [x] ユーザーメモリ管理（`src/line-ai-partner/memory-manager.ts`）
 - [x] エクスポートバレル（`src/line-ai-partner/index.ts`）
-- [ ] コンテキスト管理（会話履歴の保持・要約）
-- [ ] マルチターン会話の最適化
-- [ ] 感情分析に基づく応答調整
 
-### デイリーアシスタント＆Cron通知（Phase 2-B）
+## Phase 2-B: デイリーアシスタント+Cron通知 [完了]
 
-- [x] 天気情報取得サービス（`src/line-ai-partner/weather-service.ts`）
-- [x] デイリーレポート生成（`src/line-ai-partner/daily-assistant.ts`）
-- [x] Cronジョブ管理・リマインダー（`src/line-ai-partner/cron-manager.ts`）
-- [x] Flex Messageテンプレート集（`src/line-ai-partner/flex-templates.ts`）
+- [x] 天気情報取得サービス（`weather-service.ts`）
+- [x] デイリーレポート生成（`daily-assistant.ts`）
+- [x] Cronジョブ管理・リマインダー（`cron-manager.ts`）
+- [x] Flex Messageテンプレート集（`flex-templates.ts`）
 
-### メッセージルーティング＆統合（Phase 2-C）
+## Phase 2-C: メッセージルーティング+統合 [完了]
 
-- [x] メッセージルーター（`src/line-ai-partner/message-router.ts`）
-- [x] スラッシュコマンドハンドラ（`src/line-ai-partner/command-handler.ts`）
-- [x] OpenClaw統合レイヤー（`src/line-ai-partner/integration.ts`）
+- [x] メッセージルーター（`message-router.ts`）
+- [x] スラッシュコマンドハンドラ（`command-handler.ts`）
+- [x] OpenClaw統合レイヤー（`integration.ts`）
 
-### 外部サービス統合（Phase 3）
+## Phase 3: 外部サービス統合レイヤー [完了]
 
 - [x] OAuth2フロー管理（`integrations/oauth-manager.ts`）
 - [x] Google Calendar連携（`integrations/google-calendar.ts`）
@@ -66,73 +51,115 @@
 - [x] Notion連携（`integrations/notion.ts`）
 - [x] 統合バレルエクスポート（`integrations/index.ts`）
 
-### マネタイズ＆デプロイ（Phase 4）
+## Phase 4: マネタイズ+デプロイ設定 [完了]
 
-- [x] プラン定義＆機能ゲーティング（`billing/plans.ts`）
+- [x] プラン定義+機能ゲーティング（`billing/plans.ts`）
 - [x] Stripe決済連携（`billing/stripe-service.ts`）
 - [x] 使用量トラッキング（`billing/usage-tracker.ts`）
-- [x] Docker Compose設定（`deploy/docker-compose.yml`）
-- [x] Fly.ioデプロイ設定（`deploy/fly.toml`）
-- [x] 環境変数テンプレート（`deploy/.env.example`）
+- [x] Docker Compose設定
+- [x] Fly.ioデプロイ設定
+- [x] 環境変数テンプレート
 
-### テスト＆ドキュメント（Phase 5）
+## Phase 5: テスト+ドキュメント [完了]
 
-- [x] SOUL.md生成テスト（`soul-generator.test.ts`）
-- [x] オンボーディングフローテスト（`onboarding.test.ts`）
-- [x] メッセージルーターテスト（`message-router.test.ts`）
-- [x] プラン定義テスト（`billing/plans.test.ts`）
-- [x] セットアップガイド（`docs/line-ai-partner/SETUP_GUIDE.md`）
-- [x] APIリファレンス（`docs/line-ai-partner/API_REFERENCE.md`）
+- [x] SOUL.md生成テスト（18テスト）
+- [x] オンボーディングフローテスト（7テスト）
+- [x] メッセージルーターテスト（5テスト）
+- [x] プラン定義テスト（6テスト）
+- [x] セットアップガイド
+- [x] APIリファレンス
 
-### リッチ UI（残タスク）
+## Phase 6: OpenClaw実結合+型整合 [完了]
 
-- [ ] Flex Message テンプレートの拡張（対話型カード等）
-- [ ] リッチメニューの動的切り替え機能
-- [ ] カルーセルを活用した情報表示の改善
-- [ ] LIFF（LINE Front-end Framework）連携の検討
+- [x] `types.ts`: LineConfig/ResolvedLineAccount/LineWebhookContext再エクスポート
+- [x] `types.ts`: LinePartnerConfig拡張型追加
+- [x] `memory-manager.ts`: OpenClaw SubsystemLogger統合
+- [x] `memory-manager.ts`: searchConversationMemory() — MemoryIndexManager橋渡し
+- [x] `integration.ts`: processPartnerMessage(LineInboundContext) 実装
+- [x] `integration.ts`: sendMessageLine/pushFlexMessage/showLoadingAnimation接続
+- [x] `integration.ts`: pushMorningGreeting() — ResolvedLineAccount対応
+- [x] `billing/stripe-service.ts`: URLSearchParams型エラー修正
+- [x] `billing/stripe-service.ts`: lintエラー修正（未使用import、spread）
+- [x] `index.ts`: 新API公開（processPartnerMessage等）
+- [x] 全36テストパス、tsc --noEmitゼロエラー
 
-## フェーズ 3: 運用・品質改善（残タスク）
+---
 
-### テスト
+## Phase 7: LINE Developers Console設定 + Webhook接続 [未着手]
 
-- [ ] Postback ハンドラのテスト追加
-- [ ] グループイベント処理のテスト追加
-- [ ] E2E テストシナリオの拡充
-- [ ] 負荷テストの実施
+- [ ] LINE Developers Consoleでチャンネル作成
+- [ ] チャンネルアクセストークン発行
+- [ ] チャンネルシークレット取得
+- [ ] Webhook URL設定（`https://<domain>/line/webhook`）
+- [ ] Webhookの利用をONに切り替え
+- [ ] 応答メッセージをOFFに切り替え
+- [ ] OpenClaw config設定（channelAccessToken, channelSecret）
+- [ ] `openclaw channels status --probe` で接続確認
+- [ ] processPartnerMessageをextensions/line/src/channel.tsに登録
 
-### 運用
+## Phase 8: 外部API実接続 [未着手]
 
-- [ ] レート制限の実装（LINE API制限への対応）
-- [ ] ユーザープロファイルキャッシュの改善（現状5分TTL）
-- [ ] エラーメッセージの多言語対応（日本語/英語/タイ語/中国語）
-- [ ] モニタリング・アラートの設計
-- [ ] ログ出力の標準化
+- [ ] OpenWeatherMap APIキー取得+設定
+- [ ] `/weather` コマンドで天気取得テスト
+- [ ] Google Cloud ConsoleでOAuth2クライアント作成
+- [ ] Google Calendar連携テスト
+- [ ] Google Drive連携テスト
+- [ ] Notion Integration作成+OAuth設定
+- [ ] Notion連携テスト
+- [ ] AI応答生成のLLM接続（message-router.ts "conversation" ケース）
+- [ ] Cron実行エンジン実装（setInterval/node-cron）
 
-### ドキュメント
+## Phase 9: Stripe本番設定 + サブスク課金フロー [未着手]
 
-- [ ] API リファレンスの整備
-- [ ] 運用手順書の作成
-- [ ] トラブルシューティングガイドの作成
+- [ ] Stripe Dashboardで商品・価格作成（Standard 980円, Premium 1980円）
+- [ ] Stripe本番キー取得+設定
+- [ ] Stripe Webhook署名検証の実装
+- [ ] `/subscribe` コマンド実装
+- [ ] `/plan` コマンド実装
+- [ ] 課金ステータス変更時のLINE通知実装
+- [ ] 使用量制限到達時のメッセージ実装
 
-## フェーズ 4: 拡張機能
+## Phase 10: fly.io or Railwayデプロイ + CI/CD [未着手]
 
-- [ ] ブロードキャスト配信機能
-- [ ] LINE ログイン連携
-- [ ] LINE Pay 連携の検討
-- [ ] LINE Beacon 連携の検討
-- [ ] Audience 管理（ユーザーセグメント）
+- [ ] fly.ioアプリ作成（東京リージョン nrt）
+- [ ] シークレット設定（環境変数）
+- [ ] 初回デプロイ+動作確認
+- [ ] GitHub Actions CI/CDパイプライン構築
+- [ ] ステージング環境構築
+
+## Phase 11: E2Eテスト + ステージング検証 [未着手]
+
+- [ ] オンボーディングフローE2Eテスト
+- [ ] 天気/スケジュール/リマインダーE2Eテスト
+- [ ] 設定変更E2Eテスト
+- [ ] 課金フローE2Eテスト
+- [ ] Flex Message表示確認
+- [ ] エラーハンドリングテスト
+
+## Phase 12: 本番リリース + モニタリング [未着手]
+
+- [ ] 全テストパス確認
+- [ ] 環境変数設定完了確認
+- [ ] LINE/Stripe Webhook接続確認
+- [ ] SSL証明書確認
+- [ ] 本番デプロイ
+- [ ] ログ監視設定
+- [ ] エラーアラート設定（Sentry等）
+- [ ] 死活監視設定
+- [ ] 月次使用量レポート設定
 
 ---
 
 ## 優先度の高い課題
 
-| 課題 | 優先度 | 担当 | 備考 |
-|------|--------|------|------|
-| Postback ハンドリング拡充 | 高 | - | テストカバレッジも不足 |
-| AI パートナーペルソナ設計 | 高 | - | Phase 2-A で基盤実装済み |
-| Quick Reply バリデーション | 中 | - | LINE API 上限13件の制約 |
-| 動画メッセージ送信 | 中 | - | 受信は対応済み、送信が未実装 |
-| グループイベント処理 | 低 | - | 現状 Webhook は受信可能だが未処理 |
+| 課題                        | 優先度 | 備考                                         |
+| --------------------------- | ------ | -------------------------------------------- |
+| LINE Developers Console設定 | 最高   | Phase 7 — 本番接続の前提                     |
+| AI応答生成のLLM接続         | 高     | message-router.ts "conversation" ケース      |
+| processPartnerMessage登録   | 高     | channel.tsのprocessMessageコールバックに接続 |
+| fly.ioデプロイ              | 高     | Phase 10                                     |
+| Stripe Webhook署名検証      | 高     | セキュリティ必須                             |
+| Cron実行エンジン            | 中     | リマインダー/朝挨拶の実行基盤                |
 
 ---
 
@@ -142,3 +169,7 @@
 - LINE Messaging API のレート制限に注意
 - Flex Message は LINE バージョンにより表示が異なる場合がある
 - リプライトークンは1回限り使用可能（5メッセージまで）
+- 詳細なロードマップ: `ROADMAP.md`
+- 現在の状態: `CURRENT_STATUS.md`
+- トラブルシューティング: `DEBUG_GUIDE.md`
+- 引き継ぎ情報: `HANDOFF.md`
