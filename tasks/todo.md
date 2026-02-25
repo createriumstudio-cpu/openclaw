@@ -75,14 +75,23 @@
 - [x] Fly.ioデプロイ設定（`deploy/fly.toml`）
 - [x] 環境変数テンプレート（`deploy/.env.example`）
 
-### リッチ UI
+### テスト＆ドキュメント（Phase 5）
+
+- [x] SOUL.md生成テスト（`soul-generator.test.ts`）
+- [x] オンボーディングフローテスト（`onboarding.test.ts`）
+- [x] メッセージルーターテスト（`message-router.test.ts`）
+- [x] プラン定義テスト（`billing/plans.test.ts`）
+- [x] セットアップガイド（`docs/line-ai-partner/SETUP_GUIDE.md`）
+- [x] APIリファレンス（`docs/line-ai-partner/API_REFERENCE.md`）
+
+### リッチ UI（残タスク）
 
 - [ ] Flex Message テンプレートの拡張（対話型カード等）
 - [ ] リッチメニューの動的切り替え機能
 - [ ] カルーセルを活用した情報表示の改善
 - [ ] LIFF（LINE Front-end Framework）連携の検討
 
-## フェーズ 3: 運用・品質改善
+## フェーズ 3: 運用・品質改善（残タスク）
 
 ### テスト
 
