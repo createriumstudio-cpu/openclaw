@@ -1,27 +1,33 @@
 // LINE AI Partner – Type definitions
+//
+// Integrates with OpenClaw's existing LINE types from src/line/types.ts.
+
+import type {
+  LineConfig,
+  ResolvedLineAccount,
+  LineWebhookContext,
+  LineSendResult,
+} from "../line/types.js";
+
+// Re-export core LINE types for convenience
+export type { LineConfig, ResolvedLineAccount, LineWebhookContext, LineSendResult };
+
+/** AI Partner extension to LineConfig. */
+export type LinePartnerConfig = {
+  enabled?: boolean;
+  defaultPersonality?: PersonalityType;
+  defaultStyle?: CommunicationStyle;
+  defaultRelationship?: RelationshipType;
+};
 
 /** Partner personality archetype. */
-export type PersonalityType =
-  | "gentle"
-  | "cheerful"
-  | "cool"
-  | "tsundere"
-  | "intellectual";
+export type PersonalityType = "gentle" | "cheerful" | "cool" | "tsundere" | "intellectual";
 
 /** Message tone / formality level. */
-export type CommunicationStyle =
-  | "casual"
-  | "polite"
-  | "friendly"
-  | "formal";
+export type CommunicationStyle = "casual" | "polite" | "friendly" | "formal";
 
 /** Relationship framing between user and AI partner. */
-export type RelationshipType =
-  | "family"
-  | "friend"
-  | "lover"
-  | "pet"
-  | "assistant";
+export type RelationshipType = "family" | "friend" | "lover" | "pet" | "assistant";
 
 /** Onboarding wizard progress. */
 export type OnboardingState =

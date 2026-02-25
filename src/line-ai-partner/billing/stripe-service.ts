@@ -1,8 +1,8 @@
 // LINE AI Partner – Stripe billing integration
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { homedir } from "node:os";
-import { type Plan, getPlanById, FREE_PLAN } from "./plans.js";
+import { join } from "node:path";
+import { type Plan, getPlanById } from "./plans.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,21 +55,23 @@ const STRIPE_BASE = "https://api.stripe.com/v1";
 
 function stripeKey(): string {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
   return key;
 }
 
-async function stripeFetch(
-  path: string,
-  init?: RequestInit,
-): Promise<Response> {
+async function stripeFetch(path: string, init?: RequestInit): Promise<Response> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${stripeKey()}`,
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  if (init?.headers && typeof init.headers === "object" && !Array.isArray(init.headers)) {
+    Object.assign(headers, init.headers);
+  }
   return fetch(`${STRIPE_BASE}${path}`, {
     ...init,
-    headers: {
-      Authorization: `Bearer ${stripeKey()}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      ...init?.headers,
-    },
+    headers,
   });
 }
 
@@ -78,12 +80,11 @@ async function stripeFetch(
 // ---------------------------------------------------------------------------
 
 /** Create a Stripe customer for a LINE user. */
-export async function createCustomer(
-  userId: string,
-  email: string,
-): Promise<string> {
+export async function createCustomer(userId: string, email: string): Promise<string> {
   const store = await loadStore();
-  if (store.customers[userId]) return store.customers[userId];
+  if (store.customers[userId]) {
+    return store.customers[userId];
+  }
 
   const res = await stripeFetch("/customers", {
     method: "POST",
@@ -93,7 +94,9 @@ export async function createCustomer(
     }),
   });
 
-  if (!res.ok) throw new Error(`Stripe createCustomer failed: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Stripe createCustomer failed: ${res.status}`);
+  }
   const data = (await res.json()) as { id: string };
 
   store.customers[userId] = data.id;
@@ -117,11 +120,13 @@ export async function createSubscription(
       customer: customerId,
       "items[0][price]": plan.stripePriceId,
       payment_behavior: "default_incomplete",
-      expand: ["latest_invoice.payment_intent"],
+      "expand[]": "latest_invoice.payment_intent",
     }),
   });
 
-  if (!res.ok) throw new Error(`Stripe createSubscription failed: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Stripe createSubscription failed: ${res.status}`);
+  }
   const data = (await res.json()) as {
     id: string;
     status: string;
@@ -153,13 +158,13 @@ export async function createSubscription(
 }
 
 /** Cancel a subscription. */
-export async function cancelSubscription(
-  subscriptionId: string,
-): Promise<void> {
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
   const res = await stripeFetch(`/subscriptions/${subscriptionId}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Stripe cancelSubscription failed: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Stripe cancelSubscription failed: ${res.status}`);
+  }
 
   const store = await loadStore();
   const sub = store.subscriptions[subscriptionId];
@@ -201,7 +206,9 @@ export async function handleWebhook(event: {
       const obj = event.data.object as { subscription?: string };
       if (obj.subscription) {
         const sub = store.subscriptions[obj.subscription];
-        if (sub) sub.status = "past_due";
+        if (sub) {
+          sub.status = "past_due";
+        }
       }
       break;
     }
@@ -218,10 +225,7 @@ export async function getActivePlan(userId: string): Promise<Plan> {
 }
 
 /** Check if a user has access to a specific feature. */
-export async function hasFeature(
-  userId: string,
-  feature: string,
-): Promise<boolean> {
+export async function hasFeature(userId: string, feature: string): Promise<boolean> {
   const plan = await getActivePlan(userId);
   return plan.features.includes(feature as Plan["features"][number]);
 }

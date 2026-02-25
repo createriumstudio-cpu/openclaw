@@ -1,6 +1,15 @@
 // LINE AI Partner – barrel export
 
-// Types
+// Core LINE types (re-exported from src/line/types.ts via types.ts)
+export type {
+  LineConfig,
+  ResolvedLineAccount,
+  LineWebhookContext,
+  LineSendResult,
+  LinePartnerConfig,
+} from "./types.js";
+
+// AI Partner types
 export type {
   PersonalityType,
   CommunicationStyle,
@@ -21,15 +30,12 @@ export {
   saveUserProfile,
   getConversationMemory,
   saveConversationMemory,
+  searchConversationMemory,
 } from "./memory-manager.js";
 
 // Phase 2-B: Daily assistant & cron
 export type { WeatherInfo } from "./weather-service.js";
-export {
-  getWeather,
-  translateWeatherDescription,
-  weatherIconToEmoji,
-} from "./weather-service.js";
+export { getWeather, translateWeatherDescription, weatherIconToEmoji } from "./weather-service.js";
 export {
   generateDailyReport,
   generateOutfitSuggestion,
@@ -51,15 +57,13 @@ export {
 
 // Phase 2-C: Message routing & integration
 export { routeMessage, type RouterResponse } from "./message-router.js";
+export { isCommand, handleCommand, type CommandResponse } from "./command-handler.js";
+export type { LinePartnerEvent, LineOutboundMessage, LineInboundContext } from "./integration.js";
 export {
-  isCommand,
-  handleCommand,
-  type CommandResponse,
-} from "./command-handler.js";
-export type { LinePartnerEvent, LineOutboundMessage } from "./integration.js";
-export {
+  processPartnerMessage,
   processEvent,
   getSoulContext,
+  pushMorningGreeting,
   buildMorningGreeting,
 } from "./integration.js";
 
