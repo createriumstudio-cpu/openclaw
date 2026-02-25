@@ -34,11 +34,14 @@
 - [ ] Flex Message の事前バリデーション機能追加
 - [ ] 動画メッセージ送信（`createVideoMessage`）の実装
 
-### AI パートナー機能
+### AI パートナー機能（Phase 2-A）
 
-- [ ] AI パートナーペルソナの設計・実装
+- [x] 型定義の実装（`src/line-ai-partner/types.ts`）
+- [x] SOUL.md 動的生成エンジン（`src/line-ai-partner/soul-generator.ts`）
+- [x] オンボーディングフロー実装（`src/line-ai-partner/onboarding.ts`）
+- [x] ユーザーメモリ管理（`src/line-ai-partner/memory-manager.ts`）
+- [x] エクスポートバレル（`src/line-ai-partner/index.ts`）
 - [ ] コンテキスト管理（会話履歴の保持・要約）
-- [ ] ユーザープロファイル学習機能
 - [ ] マルチターン会話の最適化
 - [ ] 感情分析に基づく応答調整
 
@@ -87,7 +90,7 @@
 | 課題 | 優先度 | 担当 | 備考 |
 |------|--------|------|------|
 | Postback ハンドリング拡充 | 高 | - | テストカバレッジも不足 |
-| AI パートナーペルソナ設計 | 高 | - | プロジェクトの核心機能 |
+| AI パートナーペルソナ設計 | 高 | - | Phase 2-A で基盤実装済み |
 | Quick Reply バリデーション | 中 | - | LINE API 上限13件の制約 |
 | 動画メッセージ送信 | 中 | - | 受信は対応済み、送信が未実装 |
 | グループイベント処理 | 低 | - | 現状 Webhook は受信可能だが未処理 |
