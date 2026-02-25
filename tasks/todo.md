@@ -66,6 +66,15 @@
 - [x] Notion連携（`integrations/notion.ts`）
 - [x] 統合バレルエクスポート（`integrations/index.ts`）
 
+### マネタイズ＆デプロイ（Phase 4）
+
+- [x] プラン定義＆機能ゲーティング（`billing/plans.ts`）
+- [x] Stripe決済連携（`billing/stripe-service.ts`）
+- [x] 使用量トラッキング（`billing/usage-tracker.ts`）
+- [x] Docker Compose設定（`deploy/docker-compose.yml`）
+- [x] Fly.ioデプロイ設定（`deploy/fly.toml`）
+- [x] 環境変数テンプレート（`deploy/.env.example`）
+
 ### リッチ UI
 
 - [ ] Flex Message テンプレートの拡張（対話型カード等）

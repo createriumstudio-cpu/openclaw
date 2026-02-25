@@ -63,6 +63,21 @@ export {
   buildMorningGreeting,
 } from "./integration.js";
 
+// Phase 4: Billing & usage
+export type { Plan, PlanFeature } from "./billing/plans.js";
+export { FREE_PLAN, STANDARD_PLAN, PREMIUM_PLAN, getPlanById, ALL_PLANS } from "./billing/plans.js";
+export type { Subscription } from "./billing/stripe-service.js";
+export {
+  createCustomer,
+  createSubscription,
+  cancelSubscription,
+  handleWebhook,
+  getActivePlan,
+  hasFeature,
+} from "./billing/stripe-service.js";
+export type { UsageStats } from "./billing/usage-tracker.js";
+export { trackMessage, getUsage, resetMonthlyUsage } from "./billing/usage-tracker.js";
+
 // Phase 3: External service integrations
 export type { TokenSet, CalendarEvent, DriveFile, NotionPage } from "./integrations/index.js";
 export {
