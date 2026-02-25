@@ -17,6 +17,10 @@
 - [x] アーキテクチャ全体像の把握（コア層 `src/line/` + プラグイン層 `extensions/line/`）
 - [x] テストカバレッジの確認（15テストファイル、約2,249 LOC）
 - [x] プロジェクト管理ファイルの作成
+- [x] マルチテナント対応設定ファイル作成（`config/line-ai-partner.json`）
+- [x] オンボーディングフローのスキル作成（`skills/line-onboarding/SKILL.md`）
+- [x] SOUL.md テンプレート作成（`templates/SOUL_TEMPLATE.md`）
+- [x] デイリーアシスタントスキル作成（`skills/daily-assistant/SKILL.md`）
 - [ ] 開発環境のセットアップ手順書作成
 - [ ] LINE Developers Console の設定確認
 
