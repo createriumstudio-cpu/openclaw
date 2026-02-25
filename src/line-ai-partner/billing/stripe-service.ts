@@ -175,11 +175,92 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
   await saveStore(store);
 }
 
-/** Handle Stripe webhook events. */
-export async function handleWebhook(event: {
-  type: string;
-  data: { object: Record<string, unknown> };
-}): Promise<void> {
+// ---------------------------------------------------------------------------
+// Webhook signature verification
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify a Stripe webhook signature using HMAC-SHA256.
+ * @param rawBody - The raw request body string
+ * @param signatureHeader - The Stripe-Signature header value
+ * @param webhookSecret - The webhook endpoint secret (whsec_...)
+ * @param toleranceSec - Maximum age of the event in seconds (default 300 = 5 min)
+ */
+export async function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string,
+  webhookSecret?: string,
+  toleranceSec = 300,
+): Promise<{ valid: boolean; error?: string }> {
+  const secret = webhookSecret ?? process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    return { valid: false, error: "STRIPE_WEBHOOK_SECRET is not set" };
+  }
+
+  // Parse the Stripe-Signature header (t=timestamp,v1=signature,...)
+  const parts = new Map<string, string>();
+  for (const item of signatureHeader.split(",")) {
+    const [key, ...rest] = item.split("=");
+    if (key && rest.length > 0) {
+      parts.set(key.trim(), rest.join("=").trim());
+    }
+  }
+
+  const timestamp = parts.get("t");
+  const expectedSig = parts.get("v1");
+  if (!timestamp || !expectedSig) {
+    return { valid: false, error: "Invalid Stripe-Signature header format" };
+  }
+
+  // Check timestamp tolerance
+  const eventAge = Math.floor(Date.now() / 1000) - Number(timestamp);
+  if (Number.isNaN(eventAge) || eventAge > toleranceSec) {
+    return { valid: false, error: "Webhook timestamp outside tolerance window" };
+  }
+
+  // Compute expected signature: HMAC-SHA256(secret, "timestamp.rawBody")
+  const { createHmac } = await import("node:crypto");
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const computed = createHmac("sha256", secret).update(signedPayload).digest("hex");
+
+  // Constant-time comparison
+  if (computed.length !== expectedSig.length) {
+    return { valid: false, error: "Signature mismatch" };
+  }
+  const { timingSafeEqual } = await import("node:crypto");
+  const a = Buffer.from(computed, "hex");
+  const b = Buffer.from(expectedSig, "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    return { valid: false, error: "Signature mismatch" };
+  }
+
+  return { valid: true };
+}
+
+/** Handle Stripe webhook events (with optional signature verification). */
+export async function handleWebhook(
+  event: {
+    type: string;
+    data: { object: Record<string, unknown> };
+  },
+  opts?: {
+    rawBody?: string;
+    signatureHeader?: string;
+    webhookSecret?: string;
+  },
+): Promise<void> {
+  // Verify signature if raw body and signature header are provided
+  if (opts?.rawBody && opts.signatureHeader) {
+    const result = await verifyWebhookSignature(
+      opts.rawBody,
+      opts.signatureHeader,
+      opts.webhookSecret,
+    );
+    if (!result.valid) {
+      throw new Error(`Stripe webhook signature verification failed: ${result.error}`);
+    }
+  }
+
   const store = await loadStore();
 
   switch (event.type) {

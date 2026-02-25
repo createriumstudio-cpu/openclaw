@@ -4,15 +4,22 @@
 // - New users → onboarding
 // - Slash commands → command-handler
 // - Daily/weather/reminder keywords → daily-assistant / cron-manager
-// - Everything else → AI conversation (SOUL.md based)
+// - Everything else → AI conversation (SOUL.md based, via runEmbeddedPiAgent)
 
-import type { OnboardingState } from "./types.js";
+import { randomUUID } from "node:crypto";
+import { mkdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { createSubsystemLogger } from "../logging/subsystem.js";
+import { handleCommand, isCommand, type CommandResponse } from "./command-handler.js";
+import { registerReminder } from "./cron-manager.js";
+import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
 import { getUserProfile } from "./memory-manager.js";
 import { handleOnboarding } from "./onboarding.js";
-import { handleCommand, isCommand, type CommandResponse } from "./command-handler.js";
-import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
-import { registerReminder } from "./cron-manager.js";
 import { generateSoulMd } from "./soul-generator.js";
+import type { OnboardingState } from "./types.js";
+
+const log = createSubsystemLogger("line-ai-partner");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,16 +43,25 @@ const onboardingStates = new Map<string, OnboardingState>();
 
 const weatherKeywords = ["天気", "気温", "weather", "傘"];
 const scheduleKeywords = ["予定", "スケジュール", "schedule", "今日の予定"];
-const reminderPattern = /(\d{1,2})[時:：](\d{0,2})?\s*に\s*(.+?)(?:を?(?:教えて|リマインド|通知)|$)/;
+const reminderPattern =
+  /(\d{1,2})[時:：](\d{0,2})?\s*に\s*(.+?)(?:を?(?:教えて|リマインド|通知)|$)/;
 const settingKeywords = ["設定変更", "性格変えて", "口調変えて", "リセット"];
 
 function detectIntent(
   message: string,
 ): "weather" | "schedule" | "reminder" | "setting_reset" | "conversation" {
-  if (weatherKeywords.some((k) => message.includes(k))) return "weather";
-  if (scheduleKeywords.some((k) => message.includes(k))) return "schedule";
-  if (reminderPattern.test(message)) return "reminder";
-  if (settingKeywords.some((k) => message.includes(k))) return "setting_reset";
+  if (weatherKeywords.some((k) => message.includes(k))) {
+    return "weather";
+  }
+  if (scheduleKeywords.some((k) => message.includes(k))) {
+    return "schedule";
+  }
+  if (reminderPattern.test(message)) {
+    return "reminder";
+  }
+  if (settingKeywords.some((k) => message.includes(k))) {
+    return "setting_reset";
+  }
   return "conversation";
 }
 
@@ -56,10 +72,7 @@ function detectIntent(
 /**
  * Route an incoming text message to the appropriate handler.
  */
-export async function routeMessage(
-  userId: string,
-  message: string,
-): Promise<RouterResponse> {
+export async function routeMessage(userId: string, message: string): Promise<RouterResponse> {
   const text = message.trim();
 
   // 1. Slash commands take highest priority
@@ -121,7 +134,9 @@ export async function routeMessage(
         await registerReminder(userId, cron, msg);
         return { text: `${hour}:${min} にリマインドするね！「${msg}」` };
       }
-      return { text: "リマインダーの形式がわかりませんでした。「7時に薬を飲む」のように教えてね。" };
+      return {
+        text: "リマインダーの形式がわかりませんでした。「7時に薬を飲む」のように教えてね。",
+      };
     }
 
     case "setting_reset": {
@@ -136,11 +151,78 @@ export async function routeMessage(
 
     case "conversation":
     default: {
-      // Generate SOUL context for AI response (caller integrates with LLM)
-      const _soul = generateSoulMd(profile);
-      return {
-        text: `[AI応答: SOUL.mdコンテキストで応答生成 — userId=${userId}]`,
-      };
+      const soulPrompt = generateSoulMd(profile);
+      return await callLLM(userId, text, soulPrompt);
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// LLM integration via runEmbeddedPiAgent
+// ---------------------------------------------------------------------------
+
+/** Per-user session directory under ~/.openclaw/line-ai-partner/sessions/ */
+function sessionDir(): string {
+  return join(homedir(), ".openclaw", "line-ai-partner", "sessions");
+}
+
+function sessionFilePath(userId: string): string {
+  return join(sessionDir(), `${userId}.jsonl`);
+}
+
+function workspaceDir(): string {
+  return join(homedir(), ".openclaw", "line-ai-partner", "workspace");
+}
+
+/**
+ * Call the LLM via OpenClaw's embedded agent runner.
+ * Uses SOUL.md as the extra system prompt so the model responds in character.
+ */
+async function callLLM(
+  userId: string,
+  userMessage: string,
+  soulSystemPrompt: string,
+): Promise<RouterResponse> {
+  try {
+    // Ensure session and workspace directories exist
+    const sessDir = sessionDir();
+    const wsDir = workspaceDir();
+    await mkdir(sessDir, { recursive: true });
+    await mkdir(wsDir, { recursive: true });
+
+    // Lazy-import to keep the module optional (only needed when LLM is configured)
+    const { runEmbeddedPiAgent } = await import("../agents/pi-embedded-runner/run.js");
+    const { loadConfig } = await import("../config/config.js");
+    const cfg = loadConfig();
+
+    const result = await runEmbeddedPiAgent({
+      sessionId: `line-partner-${userId}`,
+      sessionFile: sessionFilePath(userId),
+      workspaceDir: wsDir,
+      prompt: userMessage,
+      extraSystemPrompt: soulSystemPrompt,
+      config: cfg,
+      disableTools: true,
+      timeoutMs: 30_000,
+      runId: randomUUID(),
+      messageChannel: "line",
+    });
+
+    // Extract text from the first payload
+    const responseText = result.payloads
+      ?.map((p) => p.text)
+      .filter(Boolean)
+      .join("\n");
+
+    if (responseText) {
+      return { text: responseText };
+    }
+
+    log.warn(`LLM returned no text for userId=${userId}`);
+    return { text: "ごめんね、うまく考えがまとまらなかった。もう一回言ってくれる？" };
+  } catch (err) {
+    log.warn(`LLM call failed for userId=${userId}: ${String(err)}`);
+    // Fallback: return a friendly error (don't expose internals)
+    return { text: "ごめんね、今ちょっと調子悪いみたい。少し待ってからもう一度話しかけてね。" };
   }
 }

@@ -35,19 +35,27 @@ export {
 
 // Phase 2-B: Daily assistant & cron
 export type { WeatherInfo } from "./weather-service.js";
-export { getWeather, translateWeatherDescription, weatherIconToEmoji } from "./weather-service.js";
+export {
+  getWeather,
+  getWeatherForecast,
+  translateWeatherDescription,
+  weatherIconToEmoji,
+} from "./weather-service.js";
 export {
   generateDailyReport,
   generateOutfitSuggestion,
   formatDailyReportMessage,
 } from "./daily-assistant.js";
 export type { Reminder } from "./cron-manager.js";
+export type { CronCallbacks } from "./cron-manager.js";
 export {
   registerMorningGreeting,
   getMorningGreetingTime,
   registerReminder,
   cancelReminder,
   listReminders,
+  startCronEngine,
+  stopCronEngine,
 } from "./cron-manager.js";
 export {
   createDailyReportCard,
@@ -76,6 +84,7 @@ export {
   createSubscription,
   cancelSubscription,
   handleWebhook,
+  verifyWebhookSignature,
   getActivePlan,
   hasFeature,
 } from "./billing/stripe-service.js";
