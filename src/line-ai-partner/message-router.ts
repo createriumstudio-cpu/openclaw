@@ -10,16 +10,16 @@ import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { createSubsystemLogger } from "../logging/subsystem.js";
 import { handleCommand, isCommand, type CommandResponse } from "./command-handler.js";
 import { registerReminder } from "./cron-manager.js";
 import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
 import { getUserProfile } from "./memory-manager.js";
 import { handleOnboarding } from "./onboarding.js";
 import { generateSoulMd } from "./soul-generator.js";
+import { createStandaloneLogger } from "./standalone-logger.js";
 import type { OnboardingState } from "./types.js";
 
-const log = createSubsystemLogger("line-ai-partner");
+const log = createStandaloneLogger("line-ai-partner");
 
 // ---------------------------------------------------------------------------
 // Types

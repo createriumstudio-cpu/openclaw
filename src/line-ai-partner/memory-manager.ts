@@ -9,11 +9,21 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { createSubsystemLogger } from "../logging/subsystem.js";
-import type { MemorySearchResult } from "../memory/types.js";
+import { createStandaloneLogger } from "./standalone-logger.js";
 import type { UserProfile } from "./types.js";
 
-const log = createSubsystemLogger("line-ai-partner");
+const log = createStandaloneLogger("line-ai-partner");
+
+// Inlined from ../memory/types.ts to avoid deep parent dependency chain
+type MemorySearchResult = {
+  path: string;
+  startLine: number;
+  endLine: number;
+  score: number;
+  snippet: string;
+  source: "memory" | "sessions";
+  citation?: string;
+};
 
 // ---------------------------------------------------------------------------
 // Storage paths
