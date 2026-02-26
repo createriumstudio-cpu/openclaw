@@ -1,0 +1,3 @@
+OpenClaw is an open-source AI gateway companion app. To test, you need an OpenClaw gateway running on a computer on your network. See https://github.com/openclaw/openclaw for setup instructions.
+
+The app connects to a self-hosted gateway over WebSocket and acts as a node providing device capabilities (camera, location, voice, canvas) to the gateway.

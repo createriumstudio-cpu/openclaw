@@ -1,0 +1,20 @@
+OpenClaw connects your iPhone to your AI gateway, turning your device into a powerful node with camera, location, voice, and canvas capabilities.
+
+KEY FEATURES
+
+- Gateway Connection: Discover and connect to your OpenClaw gateway over Wi-Fi (Bonjour), Tailnet, or manual host configuration.
+- Voice Wake: Activate your AI assistant hands-free with on-device speech recognition.
+- Camera & Screen Capture: Share photos, video clips, and screen recordings through the gateway.
+- Canvas & A2UI: Render interactive web content and AI-generated interfaces directly on your device.
+- Location Sharing: Provide real-time or background location data for location-aware automations.
+- Share Extension: Forward text, URLs, images, and videos to your gateway session from any app.
+- Apple Watch Companion: Quick access and notifications from your wrist.
+- Push Notifications: Stay informed with APNs-powered alerts from your gateway.
+
+REQUIREMENTS
+
+- An OpenClaw gateway running on macOS, Linux, or Windows (WSL2).
+- iOS 18.0 or later.
+- Network connectivity to your gateway (LAN, Tailnet, or internet).
+
+OpenClaw is open source. Visit https://github.com/openclaw/openclaw for documentation, issues, and contributions.
