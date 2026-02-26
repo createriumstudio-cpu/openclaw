@@ -1,7 +1,7 @@
+import { getUserProfile, getConversationMemory } from "./memory-manager.js";
 // LINE AI Partner – Daily assistant logic
 import type { DailyReport, UserPreferences } from "./types.js";
 import { type WeatherInfo, getWeather, weatherIconToEmoji } from "./weather-service.js";
-import { getUserProfile, getConversationMemory } from "./memory-manager.js";
 
 // ---------------------------------------------------------------------------
 // Outfit suggestion
@@ -14,12 +14,24 @@ export function generateOutfitSuggestion(
 ): string {
   const t = weather.temp;
 
-  if (t >= 30) return "暑いので半袖・短パンがおすすめ！日焼け止めも忘れずに 🧴";
-  if (t >= 25) return "Tシャツ1枚で快適に過ごせそう 👕";
-  if (t >= 20) return "薄手の長袖やカーディガンがちょうどいいかも 🧥";
-  if (t >= 15) return "ジャケットや軽めのアウターがあると安心 🧥";
-  if (t >= 10) return "しっかりめのアウターが必要です。マフラーもあると◎ 🧣";
-  if (t >= 5) return "コートにマフラー、手袋があると快適です 🧤";
+  if (t >= 30) {
+    return "暑いので半袖・短パンがおすすめ！日焼け止めも忘れずに 🧴";
+  }
+  if (t >= 25) {
+    return "Tシャツ1枚で快適に過ごせそう 👕";
+  }
+  if (t >= 20) {
+    return "薄手の長袖やカーディガンがちょうどいいかも 🧥";
+  }
+  if (t >= 15) {
+    return "ジャケットや軽めのアウターがあると安心 🧥";
+  }
+  if (t >= 10) {
+    return "しっかりめのアウターが必要です。マフラーもあると◎ 🧣";
+  }
+  if (t >= 5) {
+    return "コートにマフラー、手袋があると快適です 🧤";
+  }
   return "真冬の装備で！ダウンコート必須、防寒対策をしっかり ❄️";
 }
 
@@ -28,9 +40,7 @@ export function generateOutfitSuggestion(
 // ---------------------------------------------------------------------------
 
 /** Build a daily report for a user. */
-export async function generateDailyReport(
-  userId: string,
-): Promise<DailyReport> {
+export async function generateDailyReport(userId: string): Promise<DailyReport> {
   const profile = await getUserProfile(userId);
   const report: DailyReport = {};
 
@@ -45,10 +55,7 @@ export async function generateDailyReport(
         temperature: weather.temp,
         humidity: weather.humidity,
       };
-      report.outfitSuggestion = generateOutfitSuggestion(
-        weather,
-        profile?.preferences ?? {},
-      );
+      report.outfitSuggestion = generateOutfitSuggestion(weather, profile?.preferences ?? {});
     } catch {
       report.weather = {
         description: "天気情報を取得できませんでした",

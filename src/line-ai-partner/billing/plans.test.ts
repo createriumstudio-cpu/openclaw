@@ -1,12 +1,6 @@
 // plans.test.ts
 import { describe, it, expect } from "vitest";
-import {
-  FREE_PLAN,
-  STANDARD_PLAN,
-  PREMIUM_PLAN,
-  ALL_PLANS,
-  getPlanById,
-} from "./plans.js";
+import { FREE_PLAN, STANDARD_PLAN, PREMIUM_PLAN, ALL_PLANS, getPlanById } from "./plans.js";
 
 describe("Plan definitions", () => {
   it("FREE_PLAN has correct limits", () => {

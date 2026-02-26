@@ -28,15 +28,15 @@ cp deploy/.env.example deploy/.env
 
 最低限必要な環境変数:
 
-| 変数名 | 説明 | 必須 |
-|--------|------|------|
-| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging APIトークン | Yes |
-| `LINE_CHANNEL_SECRET` | LINEチャネルシークレット | Yes |
-| `ANTHROPIC_API_KEY` | Claude APIキー | Yes |
-| `OPENWEATHERMAP_API_KEY` | 天気情報API | No |
-| `STRIPE_SECRET_KEY` | Stripe決済 | No |
-| `GOOGLE_CLIENT_ID` | Google OAuth | No |
-| `NOTION_CLIENT_ID` | Notion OAuth | No |
+| 変数名                      | 説明                       | 必須 |
+| --------------------------- | -------------------------- | ---- |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging APIトークン | Yes  |
+| `LINE_CHANNEL_SECRET`       | LINEチャネルシークレット   | Yes  |
+| `ANTHROPIC_API_KEY`         | Claude APIキー             | Yes  |
+| `OPENWEATHERMAP_API_KEY`    | 天気情報API                | No   |
+| `STRIPE_SECRET_KEY`         | Stripe決済                 | No   |
+| `GOOGLE_CLIENT_ID`          | Google OAuth               | No   |
+| `NOTION_CLIENT_ID`          | Notion OAuth               | No   |
 
 ## 3. ローカル開発（Docker）
 
@@ -46,6 +46,7 @@ docker compose up -d
 ```
 
 サービス構成:
+
 - `app` — OpenClaw + LINE AI Partner (port 3000)
 - `redis` — セッション＆キャッシュ (port 6379)
 

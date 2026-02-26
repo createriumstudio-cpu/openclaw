@@ -15,11 +15,11 @@ metadata: { "openclaw": { "always": true, "emoji": "☀️" } }
 
 ## 天気情報
 
-* OpenWeatherMap APIを使用
-* ユーザーの位置情報はメモリに保存
-* 服装提案は気温・天気・ユーザーの好みを考慮
+- OpenWeatherMap APIを使用
+- ユーザーの位置情報はメモリに保存
+- 服装提案は気温・天気・ユーザーの好みを考慮
 
 ## リマインダー
 
-* ユーザーが「〜時に教えて」と言ったらCronジョブを作成
-* LINE Push APIで通知
+- ユーザーが「〜時に教えて」と言ったらCronジョブを作成
+- LINE Push APIで通知

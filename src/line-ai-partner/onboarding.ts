@@ -1,3 +1,5 @@
+import { saveUserProfile, getUserProfile } from "./memory-manager.js";
+import { generateSoulMd } from "./soul-generator.js";
 // LINE AI Partner – Onboarding flow
 import type {
   OnboardingState,
@@ -8,8 +10,6 @@ import type {
   RelationshipType,
   QuickReplyItem,
 } from "./types.js";
-import { saveUserProfile, getUserProfile } from "./memory-manager.js";
-import { generateSoulMd } from "./soul-generator.js";
 
 // ---------------------------------------------------------------------------
 // Quick Reply option sets
@@ -42,10 +42,7 @@ const relationshipOptions: QuickReplyItem[] = [
 // Partial profile built up during onboarding
 // ---------------------------------------------------------------------------
 
-const partialProfiles = new Map<
-  string,
-  Partial<UserProfile> & { userId: string }
->();
+const partialProfiles = new Map<string, Partial<UserProfile> & { userId: string }>();
 
 function getPartial(userId: string) {
   let p = partialProfiles.get(userId);
@@ -70,10 +67,7 @@ function handleNew(_userId: string, _message: string): OnboardingResponse {
   };
 }
 
-function handleAskingName(
-  userId: string,
-  message: string,
-): OnboardingResponse {
+function handleAskingName(userId: string, message: string): OnboardingResponse {
   const partial = getPartial(userId);
   partial.displayName = message.trim();
 
@@ -84,13 +78,9 @@ function handleAskingName(
   };
 }
 
-function handleAskingPersonality(
-  userId: string,
-  message: string,
-): OnboardingResponse {
+function handleAskingPersonality(userId: string, message: string): OnboardingResponse {
   const partial = getPartial(userId);
-  const match =
-    personalityOptions.find((o) => o.value === message || o.label === message);
+  const match = personalityOptions.find((o) => o.value === message || o.label === message);
   partial.personalityType = (match?.value ?? "gentle") as PersonalityType;
 
   return {
@@ -100,13 +90,9 @@ function handleAskingPersonality(
   };
 }
 
-function handleAskingStyle(
-  userId: string,
-  message: string,
-): OnboardingResponse {
+function handleAskingStyle(userId: string, message: string): OnboardingResponse {
   const partial = getPartial(userId);
-  const match =
-    styleOptions.find((o) => o.value === message || o.label === message);
+  const match = styleOptions.find((o) => o.value === message || o.label === message);
   partial.communicationStyle = (match?.value ?? "friendly") as CommunicationStyle;
 
   return {
@@ -121,8 +107,7 @@ async function handleAskingRelationship(
   message: string,
 ): Promise<OnboardingResponse> {
   const partial = getPartial(userId);
-  const match =
-    relationshipOptions.find((o) => o.value === message || o.label === message);
+  const match = relationshipOptions.find((o) => o.value === message || o.label === message);
   partial.relationshipType = (match?.value ?? "friend") as RelationshipType;
 
   const now = new Date().toISOString();

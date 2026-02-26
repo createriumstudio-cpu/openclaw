@@ -1,7 +1,12 @@
 // soul-generator.test.ts
 import { describe, it, expect } from "vitest";
 import { generateSoulMd } from "./soul-generator.js";
-import type { UserProfile, PersonalityType, CommunicationStyle, RelationshipType } from "./types.js";
+import type {
+  UserProfile,
+  PersonalityType,
+  CommunicationStyle,
+  RelationshipType,
+} from "./types.js";
 
 function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
@@ -31,7 +36,11 @@ describe("generateSoulMd", () => {
   });
 
   const personalityTypes: PersonalityType[] = [
-    "gentle", "cheerful", "cool", "tsundere", "intellectual",
+    "gentle",
+    "cheerful",
+    "cool",
+    "tsundere",
+    "intellectual",
   ];
 
   for (const pt of personalityTypes) {
@@ -51,9 +60,7 @@ describe("generateSoulMd", () => {
     });
   }
 
-  const relationships: RelationshipType[] = [
-    "family", "friend", "lover", "pet", "assistant",
-  ];
+  const relationships: RelationshipType[] = ["family", "friend", "lover", "pet", "assistant"];
 
   for (const rel of relationships) {
     it(`includes relationship rules for ${rel}`, () => {

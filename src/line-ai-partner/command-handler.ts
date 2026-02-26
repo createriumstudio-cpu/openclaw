@@ -1,10 +1,10 @@
 // LINE AI Partner – Slash command handler
 
-import type { QuickReplyItem } from "./types.js";
-import { getUserProfile } from "./memory-manager.js";
-import { getWeather, weatherIconToEmoji } from "./weather-service.js";
-import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
 import { listReminders, registerReminder } from "./cron-manager.js";
+import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
+import { getUserProfile } from "./memory-manager.js";
+import type { QuickReplyItem } from "./types.js";
+import { getWeather, weatherIconToEmoji } from "./weather-service.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,10 +74,7 @@ export function isCommand(message: string): boolean {
 }
 
 /** Handle a slash command and return a response. */
-export async function handleCommand(
-  userId: string,
-  message: string,
-): Promise<CommandResponse> {
+export async function handleCommand(userId: string, message: string): Promise<CommandResponse> {
   const trimmed = message.trim();
   const lower = trimmed.toLowerCase();
 
@@ -97,10 +94,7 @@ export async function handleCommand(
 // Command handlers
 // ---------------------------------------------------------------------------
 
-async function handleHelp(
-  _userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handleHelp(_userId: string, _args: string): Promise<CommandResponse> {
   const lines = [
     "📖 使い方ガイド",
     "",
@@ -108,20 +102,17 @@ async function handleHelp(
     ...commands.map((c) => `${c.aliases[0]} — ${c.description}`),
     "",
     "【自然な言葉でもOK】",
-    '・「今日の天気」→ 天気情報',
-    '・「7時に起こして」→ リマインダー設定',
-    '・「予定教えて」→ 今日の予定',
-    '・「設定変更」→ 性格・口調の変更',
+    "・「今日の天気」→ 天気情報",
+    "・「7時に起こして」→ リマインダー設定",
+    "・「予定教えて」→ 今日の予定",
+    "・「設定変更」→ 性格・口調の変更",
     "",
     "それ以外のメッセージは普通に会話できるよ！",
   ];
   return { text: lines.join("\n") };
 }
 
-async function handleSetting(
-  userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handleSetting(userId: string, _args: string): Promise<CommandResponse> {
   const profile = await getUserProfile(userId);
   if (!profile) {
     return { text: "まだ設定が完了していません。まず初期設定を行いましょう！" };
@@ -148,10 +139,7 @@ async function handleSetting(
   };
 }
 
-async function handlePersonality(
-  _userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handlePersonality(_userId: string, _args: string): Promise<CommandResponse> {
   return {
     text: "どの性格にする？ ✨",
     quickReplies: [
@@ -164,10 +152,7 @@ async function handlePersonality(
   };
 }
 
-async function handleStyle(
-  _userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handleStyle(_userId: string, _args: string): Promise<CommandResponse> {
   return {
     text: "どんな口調がいい？ 🗣️",
     quickReplies: [
@@ -179,10 +164,7 @@ async function handleStyle(
   };
 }
 
-async function handleWeather(
-  userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handleWeather(userId: string, _args: string): Promise<CommandResponse> {
   const profile = await getUserProfile(userId);
   const location = profile?.preferences.weatherLocation;
   if (!location) {
@@ -205,18 +187,12 @@ async function handleWeather(
   }
 }
 
-async function handleSchedule(
-  userId: string,
-  _args: string,
-): Promise<CommandResponse> {
+async function handleSchedule(userId: string, _args: string): Promise<CommandResponse> {
   const report = await generateDailyReport(userId);
   return { text: formatDailyReportMessage(report) };
 }
 
-async function handleRemind(
-  userId: string,
-  args: string,
-): Promise<CommandResponse> {
+async function handleRemind(userId: string, args: string): Promise<CommandResponse> {
   if (!args) {
     const reminders = await listReminders(userId);
     if (reminders.length === 0) {

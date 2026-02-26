@@ -1,7 +1,7 @@
 // LINE AI Partner – OAuth2 flow manager
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { homedir } from "node:os";
+import { join } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,7 +39,10 @@ const serviceConfigs: Record<string, () => OAuthServiceConfig> = {
     authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     redirectUri: process.env.OAUTH_REDIRECT_URI ?? "http://localhost:3000/oauth/callback",
-    scopes: ["https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/calendar.events"],
+    scopes: [
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ],
   }),
   "google-drive": () => ({
     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -89,7 +92,9 @@ async function saveStore(store: TokenStore): Promise<void> {
 /** Generate an OAuth2 authorization URL for a user + service. */
 export function initiateOAuth(userId: string, service: string): string {
   const configFn = serviceConfigs[service];
-  if (!configFn) throw new Error(`Unknown service: ${service}`);
+  if (!configFn) {
+    throw new Error(`Unknown service: ${service}`);
+  }
   const config = configFn();
 
   const params = new URLSearchParams({
@@ -106,15 +111,16 @@ export function initiateOAuth(userId: string, service: string): string {
 }
 
 /** Handle the OAuth2 callback and exchange code for tokens. */
-export async function handleCallback(
-  code: string,
-  state: string,
-): Promise<TokenSet> {
+export async function handleCallback(code: string, state: string): Promise<TokenSet> {
   const [userId, service] = state.split(":");
-  if (!userId || !service) throw new Error("Invalid OAuth state");
+  if (!userId || !service) {
+    throw new Error("Invalid OAuth state");
+  }
 
   const configFn = serviceConfigs[service];
-  if (!configFn) throw new Error(`Unknown service: ${service}`);
+  if (!configFn) {
+    throw new Error(`Unknown service: ${service}`);
+  }
   const config = configFn();
 
   const res = await fetch(config.tokenUrl, {
@@ -148,7 +154,9 @@ export async function handleCallback(
   };
 
   const store = await loadStore();
-  if (!store.tokens[userId]) store.tokens[userId] = {};
+  if (!store.tokens[userId]) {
+    store.tokens[userId] = {};
+  }
   store.tokens[userId][service] = tokenSet;
   await saveStore(store);
 
@@ -156,10 +164,7 @@ export async function handleCallback(
 }
 
 /** Refresh an expired token. */
-export async function refreshToken(
-  userId: string,
-  service: string,
-): Promise<TokenSet> {
+export async function refreshToken(userId: string, service: string): Promise<TokenSet> {
   const store = await loadStore();
   const existing = store.tokens[userId]?.[service];
   if (!existing?.refreshToken) {
@@ -167,7 +172,9 @@ export async function refreshToken(
   }
 
   const configFn = serviceConfigs[service];
-  if (!configFn) throw new Error(`Unknown service: ${service}`);
+  if (!configFn) {
+    throw new Error(`Unknown service: ${service}`);
+  }
   const config = configFn();
 
   const res = await fetch(config.tokenUrl, {
@@ -205,13 +212,12 @@ export async function refreshToken(
 }
 
 /** Get a valid access token, refreshing if expired. */
-export async function getAccessToken(
-  userId: string,
-  service: string,
-): Promise<string | null> {
+export async function getAccessToken(userId: string, service: string): Promise<string | null> {
   const store = await loadStore();
   const tokenSet = store.tokens[userId]?.[service];
-  if (!tokenSet) return null;
+  if (!tokenSet) {
+    return null;
+  }
 
   if (Date.now() >= tokenSet.expiresAt - 60_000) {
     const refreshed = await refreshToken(userId, service);
@@ -225,6 +231,8 @@ export async function getAccessToken(
 export async function getConnectedServices(userId: string): Promise<string[]> {
   const store = await loadStore();
   const userTokens = store.tokens[userId];
-  if (!userTokens) return [];
+  if (!userTokens) {
+    return [];
+  }
   return Object.keys(userTokens);
 }

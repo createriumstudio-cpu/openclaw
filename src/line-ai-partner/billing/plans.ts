@@ -44,13 +44,7 @@ export const STANDARD_PLAN: Plan = {
   nameJa: "スタンダード",
   price: 980,
   messageLimit: 0,
-  features: [
-    "basic_chat",
-    "personality_change",
-    "daily_report",
-    "reminders",
-    "weather",
-  ],
+  features: ["basic_chat", "personality_change", "daily_report", "reminders", "weather"],
   stripePriceId: process.env.STRIPE_STANDARD_PRICE_ID,
 };
 

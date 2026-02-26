@@ -3,8 +3,8 @@
 // Follows the pattern from src/line/flex-templates/.
 // All functions return LINE Flex Message container objects.
 
-import type { DailyReport, OnboardingState } from "./types.js";
 import type { Reminder } from "./cron-manager.js";
+import type { DailyReport, OnboardingState } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -99,10 +99,7 @@ const onboardingTitles: Record<OnboardingState, string> = {
 };
 
 /** Create a Flex Message card for an onboarding step. */
-export function createOnboardingCard(
-  step: OnboardingState,
-  options: string[],
-): FlexMessage {
+export function createOnboardingCard(step: OnboardingState, options: string[]): FlexMessage {
   const title = onboardingTitles[step];
 
   const buttons: FlexButton[] = options.map((label) => ({
