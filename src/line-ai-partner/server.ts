@@ -3,15 +3,53 @@
 // Handles:
 //   POST /webhook  — LINE webhook events (signature verified)
 //   GET  /health   — Health check endpoint
+//
+// All optional dependencies (routeMessage, cron-manager) are loaded lazily
+// at runtime. If they fail to import, the server still starts and responds
+// with a friendly fallback message.
 
 import crypto from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { startCronEngine, stopCronEngine, type CronCallbacks } from "./cron-manager.js";
-import { routeMessage } from "./message-router.js";
 
 const PORT = Number(process.env.PORT) || 3000;
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET ?? "";
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+
+// ---------------------------------------------------------------------------
+// Lazy-loaded optional modules (graceful fallback on import failure)
+// ---------------------------------------------------------------------------
+
+type RouteMessageFn = (userId: string, message: string) => Promise<{ text: string }>;
+type StartCronFn = (cb: {
+  onMorningGreeting: (userId: string, hhmm: string) => Promise<void>;
+  onReminder: (userId: string, message: string) => Promise<void>;
+}) => void;
+type StopCronFn = () => void;
+
+let routeMessageFn: RouteMessageFn | null = null;
+let startCronEngineFn: StartCronFn | null = null;
+let stopCronEngineFn: StopCronFn | null = null;
+
+async function loadOptionalModules(): Promise<void> {
+  // message-router (depends on many parent modules)
+  try {
+    const mod = await import("./message-router.js");
+    routeMessageFn = mod.routeMessage;
+    console.log("  [ok] message-router loaded");
+  } catch (err) {
+    console.warn(`  [skip] message-router unavailable: ${(err as Error).message}`);
+  }
+
+  // cron-manager (self-contained, should usually work)
+  try {
+    const mod = await import("./cron-manager.js");
+    startCronEngineFn = mod.startCronEngine;
+    stopCronEngineFn = mod.stopCronEngine;
+    console.log("  [ok] cron-manager loaded");
+  } catch (err) {
+    console.warn(`  [skip] cron-manager unavailable: ${(err as Error).message}`);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // LINE signature verification (HMAC-SHA256, timing-safe)
@@ -100,6 +138,8 @@ type LineEvent = {
   postback?: { data: string };
 };
 
+const FALLBACK_REPLY = "サーバーを準備中です。しばらく待ってからもう一度話しかけてね！";
+
 async function handleEvent(event: LineEvent): Promise<void> {
   if (event.type !== "message" || event.message?.type !== "text" || !event.message.text) {
     return;
@@ -111,11 +151,14 @@ async function handleEvent(event: LineEvent): Promise<void> {
   }
 
   try {
-    const result = await routeMessage(userId, event.message.text);
+    const reply = routeMessageFn
+      ? await routeMessageFn(userId, event.message.text)
+      : { text: FALLBACK_REPLY };
+
     if (event.replyToken) {
-      await replyText(event.replyToken, result.text);
+      await replyText(event.replyToken, reply.text);
     } else {
-      await pushText(userId, result.text);
+      await pushText(userId, reply.text);
     }
   } catch (err) {
     console.error(`handleEvent error for user=${userId}:`, err);
@@ -138,7 +181,16 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   // Health check
   if (url === "/health" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        modules: {
+          messageRouter: routeMessageFn != null,
+          cronEngine: startCronEngineFn != null,
+        },
+      }),
+    );
     return;
   }
 
@@ -200,45 +252,54 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 });
 
 // ---------------------------------------------------------------------------
-// Cron engine (morning greetings, reminders)
-// ---------------------------------------------------------------------------
-
-const cronCallbacks: CronCallbacks = {
-  onMorningGreeting: async (userId, hhmm) => {
-    console.log(`[cron] morning greeting for ${userId} at ${hhmm}`);
-    await pushText(userId, `おはよう！今日も一日頑張ろうね (${hhmm})`);
-  },
-  onReminder: async (userId, message) => {
-    console.log(`[cron] reminder for ${userId}: ${message}`);
-    await pushText(userId, `リマインダー: ${message}`);
-  },
-};
-
-// ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
 
-server.listen(PORT, () => {
-  console.log(`LINE AI Partner server listening on port ${PORT}`);
-  console.log(`  webhook: POST /webhook`);
-  console.log(`  health:  GET  /health`);
-  if (!LINE_CHANNEL_SECRET) {
-    console.warn("  WARNING: LINE_CHANNEL_SECRET not set");
-  }
-  if (!LINE_CHANNEL_ACCESS_TOKEN) {
-    console.warn("  WARNING: LINE_CHANNEL_ACCESS_TOKEN not set");
-  }
+async function main(): Promise<void> {
+  console.log("LINE AI Partner – loading modules...");
+  await loadOptionalModules();
 
-  startCronEngine(cronCallbacks);
-  console.log("  cron engine started");
-});
+  server.listen(PORT, () => {
+    console.log(`LINE AI Partner server listening on port ${PORT}`);
+    console.log(`  webhook: POST /webhook`);
+    console.log(`  health:  GET  /health`);
+    if (!LINE_CHANNEL_SECRET) {
+      console.warn("  WARNING: LINE_CHANNEL_SECRET not set");
+    }
+    if (!LINE_CHANNEL_ACCESS_TOKEN) {
+      console.warn("  WARNING: LINE_CHANNEL_ACCESS_TOKEN not set");
+    }
+
+    // Start cron engine if available
+    if (startCronEngineFn) {
+      startCronEngineFn({
+        onMorningGreeting: async (userId, hhmm) => {
+          console.log(`[cron] morning greeting for ${userId} at ${hhmm}`);
+          await pushText(userId, `おはよう！今日も一日頑張ろうね (${hhmm})`);
+        },
+        onReminder: async (userId, message) => {
+          console.log(`[cron] reminder for ${userId}: ${message}`);
+          await pushText(userId, `リマインダー: ${message}`);
+        },
+      });
+      console.log("  cron engine started");
+    }
+  });
+}
 
 // Graceful shutdown
 function shutdown(): void {
   console.log("Shutting down...");
-  stopCronEngine();
+  if (stopCronEngineFn) {
+    stopCronEngineFn();
+  }
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(1), 5000);
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+
+main().catch((err) => {
+  console.error("Fatal startup error:", err);
+  process.exit(1);
+});
