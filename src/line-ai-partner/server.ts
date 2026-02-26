@@ -7,6 +7,8 @@
 // All optional dependencies (routeMessage, cron-manager) are loaded lazily
 // at runtime. If they fail to import, the server still starts and responds
 // with a friendly fallback message.
+//
+// Deploy: push to branch triggers fly.io redeploy via GitHub Actions.
 
 import crypto from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
