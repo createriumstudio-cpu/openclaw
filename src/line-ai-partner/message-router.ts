@@ -174,6 +174,10 @@ function workspaceDir(): string {
   return join(homedir(), ".openclaw", "line-ai-partner", "workspace");
 }
 
+// LLM provider/model – configurable via env vars, defaults to Gemini 2.5 Flash.
+const LLM_PROVIDER = process.env.LLM_PROVIDER ?? "google";
+const LLM_MODEL = process.env.LLM_MODEL ?? "gemini-2.5-flash";
+
 /**
  * Call the LLM via OpenClaw's embedded agent runner.
  * Uses SOUL.md as the extra system prompt so the model responds in character.
@@ -202,15 +206,19 @@ async function callLLM(
       prompt: userMessage,
       extraSystemPrompt: soulSystemPrompt,
       config: cfg,
+      provider: LLM_PROVIDER,
+      model: LLM_MODEL,
       disableTools: true,
       timeoutMs: 30_000,
       runId: randomUUID(),
       messageChannel: "line",
     });
 
-    // Extract text from the first payload
+    // Extract text from successful (non-error) payloads only.
+    // Error payloads contain raw API messages that must not be shown to users.
     const responseText = result.payloads
-      ?.map((p) => p.text)
+      ?.filter((p) => !p.isError)
+      .map((p) => p.text)
       .filter(Boolean)
       .join("\n");
 
@@ -218,7 +226,13 @@ async function callLLM(
       return { text: responseText };
     }
 
-    log.warn(`LLM returned no text for userId=${userId}`);
+    // If all payloads were errors, log the first one for debugging
+    const errorPayload = result.payloads?.find((p) => p.isError);
+    if (errorPayload) {
+      log.warn(`LLM error payload for userId=${userId}: ${errorPayload.text}`);
+    } else {
+      log.warn(`LLM returned no text for userId=${userId}`);
+    }
     return { text: "ごめんね、うまく考えがまとまらなかった。もう一回言ってくれる？" };
   } catch (err) {
     log.warn(`LLM call failed for userId=${userId}: ${String(err)}`);

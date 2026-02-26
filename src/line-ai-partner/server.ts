@@ -272,6 +272,12 @@ async function main(): Promise<void> {
     if (!LINE_CHANNEL_ACCESS_TOKEN) {
       console.warn("  WARNING: LINE_CHANNEL_ACCESS_TOKEN not set");
     }
+    if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+      console.warn("  WARNING: No LLM API key set (GEMINI_API_KEY / ANTHROPIC_API_KEY)");
+    }
+    console.log(
+      `  LLM: ${process.env.LLM_PROVIDER ?? "google"}/${process.env.LLM_MODEL ?? "gemini-2.5-flash"}`,
+    );
 
     // Start cron engine if available
     if (startCronEngineFn) {
