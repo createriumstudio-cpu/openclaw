@@ -38,6 +38,10 @@ vi.mock("./command-handler.js", () => ({
   handleCommand: vi.fn().mockResolvedValue({ text: "コマンド結果" }),
 }));
 
+vi.mock("./gemini-client.js", () => ({
+  chatWithGemini: vi.fn().mockResolvedValue("こんにちは！元気？"),
+}));
+
 import { getUserProfile } from "./memory-manager.js";
 import { routeMessage } from "./message-router.js";
 
@@ -117,8 +121,6 @@ describe("routeMessage", () => {
     });
 
     const result = await routeMessage("U001", "最近どう？");
-    // LLM call falls back gracefully when no model provider is configured
-    expect(typeof result.text).toBe("string");
-    expect(result.text.length).toBeGreaterThan(0);
+    expect(result.text).toBe("こんにちは！元気？");
   });
 });

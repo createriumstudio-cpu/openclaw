@@ -4,22 +4,16 @@
 // - New users → onboarding
 // - Slash commands → command-handler
 // - Daily/weather/reminder keywords → daily-assistant / cron-manager
-// - Everything else → AI conversation (SOUL.md based, via runEmbeddedPiAgent)
+// - Everything else → AI conversation (SOUL.md + Gemini)
 
-import { randomUUID } from "node:crypto";
-import { mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { handleCommand, isCommand, type CommandResponse } from "./command-handler.js";
 import { registerReminder } from "./cron-manager.js";
 import { generateDailyReport, formatDailyReportMessage } from "./daily-assistant.js";
+import { chatWithGemini } from "./gemini-client.js";
 import { getUserProfile } from "./memory-manager.js";
 import { handleOnboarding } from "./onboarding.js";
 import { generateSoulMd } from "./soul-generator.js";
-import { createStandaloneLogger } from "./standalone-logger.js";
 import type { OnboardingState } from "./types.js";
-
-const log = createStandaloneLogger("line-ai-partner");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,91 +146,8 @@ export async function routeMessage(userId: string, message: string): Promise<Rou
     case "conversation":
     default: {
       const soulPrompt = generateSoulMd(profile);
-      return await callLLM(userId, text, soulPrompt);
+      const reply = await chatWithGemini(userId, text, soulPrompt);
+      return { text: reply };
     }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// LLM integration via runEmbeddedPiAgent
-// ---------------------------------------------------------------------------
-
-/** Per-user session directory under ~/.openclaw/line-ai-partner/sessions/ */
-function sessionDir(): string {
-  return join(homedir(), ".openclaw", "line-ai-partner", "sessions");
-}
-
-function sessionFilePath(userId: string): string {
-  return join(sessionDir(), `${userId}.jsonl`);
-}
-
-function workspaceDir(): string {
-  return join(homedir(), ".openclaw", "line-ai-partner", "workspace");
-}
-
-// LLM provider/model – configurable via env vars, defaults to Gemini 2.5 Flash.
-const LLM_PROVIDER = process.env.LLM_PROVIDER ?? "google";
-const LLM_MODEL = process.env.LLM_MODEL ?? "gemini-2.5-flash";
-
-/**
- * Call the LLM via OpenClaw's embedded agent runner.
- * Uses SOUL.md as the extra system prompt so the model responds in character.
- */
-async function callLLM(
-  userId: string,
-  userMessage: string,
-  soulSystemPrompt: string,
-): Promise<RouterResponse> {
-  try {
-    // Ensure session and workspace directories exist
-    const sessDir = sessionDir();
-    const wsDir = workspaceDir();
-    await mkdir(sessDir, { recursive: true });
-    await mkdir(wsDir, { recursive: true });
-
-    // Lazy-import to keep the module optional (only needed when LLM is configured)
-    const { runEmbeddedPiAgent } = await import("../agents/pi-embedded-runner/run.js");
-    const { loadConfig } = await import("../config/config.js");
-    const cfg = loadConfig();
-
-    const result = await runEmbeddedPiAgent({
-      sessionId: `line-partner-${userId}`,
-      sessionFile: sessionFilePath(userId),
-      workspaceDir: wsDir,
-      prompt: userMessage,
-      extraSystemPrompt: soulSystemPrompt,
-      config: cfg,
-      provider: LLM_PROVIDER,
-      model: LLM_MODEL,
-      disableTools: true,
-      timeoutMs: 30_000,
-      runId: randomUUID(),
-      messageChannel: "line",
-    });
-
-    // Extract text from successful (non-error) payloads only.
-    // Error payloads contain raw API messages that must not be shown to users.
-    const responseText = result.payloads
-      ?.filter((p) => !p.isError)
-      .map((p) => p.text)
-      .filter(Boolean)
-      .join("\n");
-
-    if (responseText) {
-      return { text: responseText };
-    }
-
-    // If all payloads were errors, log the first one for debugging
-    const errorPayload = result.payloads?.find((p) => p.isError);
-    if (errorPayload) {
-      log.warn(`LLM error payload for userId=${userId}: ${errorPayload.text}`);
-    } else {
-      log.warn(`LLM returned no text for userId=${userId}`);
-    }
-    return { text: "ごめんね、うまく考えがまとまらなかった。もう一回言ってくれる？" };
-  } catch (err) {
-    log.warn(`LLM call failed for userId=${userId}: ${String(err)}`);
-    // Fallback: return a friendly error (don't expose internals)
-    return { text: "ごめんね、今ちょっと調子悪いみたい。少し待ってからもう一度話しかけてね。" };
   }
 }
