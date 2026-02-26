@@ -18,7 +18,7 @@ COPY . .
 
 # Bundle server into a single ESM file to avoid tsx __name helper bug
 # (see docs/debug/node-issue.md). npm packages stay external (resolved from node_modules).
-RUN pnpm exec esbuild src/line-ai-partner/server.ts \
+RUN npx esbuild src/line-ai-partner/server.ts \
       --bundle --platform=node --format=esm \
       --outfile=dist/line-server.mjs \
       --packages=external
