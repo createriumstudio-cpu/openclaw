@@ -16,9 +16,12 @@ RUN pnpm install --frozen-lockfile
 # Copy source
 COPY . .
 
+# esbuild is a transitive dep of tsx but not hoisted; install globally for the bundle step.
+RUN npm install -g esbuild
+
 # Bundle server into a single ESM file to avoid tsx __name helper bug
 # (see docs/debug/node-issue.md). npm packages stay external (resolved from node_modules).
-RUN npx esbuild src/line-ai-partner/server.ts \
+RUN esbuild src/line-ai-partner/server.ts \
       --bundle --platform=node --format=esm \
       --outfile=dist/line-server.mjs \
       --packages=external
