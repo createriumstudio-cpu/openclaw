@@ -119,12 +119,17 @@
 - [ ] Notion Integration作成+OAuth設定
 - [ ] Notion連携テスト
 
-## Phase 9: Stripe本番設定 + サブスク課金フロー [未着手]
+## Phase 9: Apple IAP / キャリア決済 / LINE Pay 課金フロー [スケルトン実装済み]
 
-- [ ] Stripe Dashboardで商品・価格作成（Standard 980円, Premium 1980円）
-- [ ] Stripe本番キー取得+設定
-- [ ] `/subscribe` コマンド実装
+- [x] `payment-service.ts` 統合インターフェース + スケルトン作成
+- [x] Stripe実装を `archive/stripe/` に退避
+- [x] `stripe-service.ts` をスタブ化（getActivePlan/hasFeature/setUserPlanは維持）
+- [ ] Apple App Store Server API v2 レシート検証実装
+- [ ] キャリア決済アグリゲーター連携実装（docomo/au/SoftBank）
+- [ ] LINE Pay API v3 連携実装
+- [ ] `/subscribe` コマンド実装（決済方法選択UI）
 - [ ] `/plan` コマンド実装
+- [ ] App Store Server Notifications v2 Webhook処理
 - [ ] 課金ステータス変更時のLINE通知実装
 - [ ] 使用量制限到達時のメッセージ実装
 

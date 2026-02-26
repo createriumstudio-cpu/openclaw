@@ -1,11 +1,18 @@
-// LINE AI Partner – Stripe billing integration
+// LINE AI Partner – Billing service (stub)
+//
+// Stripe実装は archive/stripe/stripe-service.ts に退避済み。
+// Apple IAP / キャリア決済 / LINE Pay に移行予定。
+// 新しい決済サービスは payment-service.ts を参照。
+//
+// このファイルは既存のインポートを壊さないためにシグネチャのみ維持。
+
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { type Plan, getPlanById } from "./plans.js";
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (maintained for backward compatibility)
 // ---------------------------------------------------------------------------
 
 export type Subscription = {
@@ -19,13 +26,13 @@ export type Subscription = {
 
 type BillingStore = {
   version: 1;
-  customers: Record<string, string>; // userId → customerId
-  subscriptions: Record<string, Subscription>; // subscriptionId → Subscription
-  userPlans: Record<string, string>; // userId → planId
+  customers: Record<string, string>;
+  subscriptions: Record<string, Subscription>;
+  userPlans: Record<string, string>;
 };
 
 // ---------------------------------------------------------------------------
-// Persistence
+// Persistence (shared with payment-service.ts)
 // ---------------------------------------------------------------------------
 
 function storePath(): string {
@@ -48,265 +55,71 @@ async function saveStore(store: BillingStore): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Stripe API helpers
+// Stub API (Apple IAP/キャリア決済に移行予定)
 // ---------------------------------------------------------------------------
 
-const STRIPE_BASE = "https://api.stripe.com/v1";
-
-function stripeKey(): string {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error("STRIPE_SECRET_KEY is not set");
-  }
-  return key;
+/** @deprecated Stripe removed. Use payment-service.ts instead. */
+export async function createCustomer(_userId: string, _email: string): Promise<string> {
+  throw new Error(
+    "Stripe integration removed. Use payment-service.ts (Apple IAP/carrier billing).",
+  );
 }
 
-async function stripeFetch(path: string, init?: RequestInit): Promise<Response> {
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${stripeKey()}`,
-    "Content-Type": "application/x-www-form-urlencoded",
-  };
-  if (init?.headers && typeof init.headers === "object" && !Array.isArray(init.headers)) {
-    Object.assign(headers, init.headers);
-  }
-  return fetch(`${STRIPE_BASE}${path}`, {
-    ...init,
-    headers,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/** Create a Stripe customer for a LINE user. */
-export async function createCustomer(userId: string, email: string): Promise<string> {
-  const store = await loadStore();
-  if (store.customers[userId]) {
-    return store.customers[userId];
-  }
-
-  const res = await stripeFetch("/customers", {
-    method: "POST",
-    body: new URLSearchParams({
-      email,
-      metadata: JSON.stringify({ lineUserId: userId }),
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Stripe createCustomer failed: ${res.status}`);
-  }
-  const data = (await res.json()) as { id: string };
-
-  store.customers[userId] = data.id;
-  await saveStore(store);
-  return data.id;
-}
-
-/** Create a subscription for a customer. */
+/** @deprecated Stripe removed. Use payment-service.ts instead. */
 export async function createSubscription(
-  customerId: string,
-  planId: string,
+  _customerId: string,
+  _planId: string,
 ): Promise<Subscription> {
-  const plan = getPlanById(planId);
-  if (!plan.stripePriceId) {
-    throw new Error(`Plan ${planId} has no Stripe price ID`);
-  }
-
-  const res = await stripeFetch("/subscriptions", {
-    method: "POST",
-    body: new URLSearchParams({
-      customer: customerId,
-      "items[0][price]": plan.stripePriceId,
-      payment_behavior: "default_incomplete",
-      "expand[]": "latest_invoice.payment_intent",
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Stripe createSubscription failed: ${res.status}`);
-  }
-  const data = (await res.json()) as {
-    id: string;
-    status: string;
-    current_period_end: number;
-    metadata?: { lineUserId?: string };
-  };
-
-  const sub: Subscription = {
-    id: data.id,
-    customerId,
-    userId: data.metadata?.lineUserId ?? "",
-    planId,
-    status: data.status as Subscription["status"],
-    currentPeriodEnd: new Date(data.current_period_end * 1000).toISOString(),
-  };
-
-  const store = await loadStore();
-  store.subscriptions[sub.id] = sub;
-  // Find userId by customerId
-  for (const [uid, cid] of Object.entries(store.customers)) {
-    if (cid === customerId) {
-      store.userPlans[uid] = planId;
-      sub.userId = uid;
-      break;
-    }
-  }
-  await saveStore(store);
-  return sub;
+  throw new Error(
+    "Stripe integration removed. Use payment-service.ts (Apple IAP/carrier billing).",
+  );
 }
 
-/** Cancel a subscription. */
-export async function cancelSubscription(subscriptionId: string): Promise<void> {
-  const res = await stripeFetch(`/subscriptions/${subscriptionId}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    throw new Error(`Stripe cancelSubscription failed: ${res.status}`);
-  }
-
-  const store = await loadStore();
-  const sub = store.subscriptions[subscriptionId];
-  if (sub) {
-    sub.status = "canceled";
-    store.userPlans[sub.userId] = "free";
-  }
-  await saveStore(store);
+/** @deprecated Stripe removed. Use payment-service.ts instead. */
+export async function cancelSubscription(_subscriptionId: string): Promise<void> {
+  throw new Error(
+    "Stripe integration removed. Use payment-service.ts (Apple IAP/carrier billing).",
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Webhook signature verification
-// ---------------------------------------------------------------------------
-
-/**
- * Verify a Stripe webhook signature using HMAC-SHA256.
- * @param rawBody - The raw request body string
- * @param signatureHeader - The Stripe-Signature header value
- * @param webhookSecret - The webhook endpoint secret (whsec_...)
- * @param toleranceSec - Maximum age of the event in seconds (default 300 = 5 min)
- */
+/** @deprecated Stripe removed. Use payment-service.ts instead. */
 export async function verifyWebhookSignature(
-  rawBody: string,
-  signatureHeader: string,
-  webhookSecret?: string,
-  toleranceSec = 300,
+  _rawBody: string,
+  _signatureHeader: string,
+  _webhookSecret?: string,
+  _toleranceSec?: number,
 ): Promise<{ valid: boolean; error?: string }> {
-  const secret = webhookSecret ?? process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) {
-    return { valid: false, error: "STRIPE_WEBHOOK_SECRET is not set" };
-  }
-
-  // Parse the Stripe-Signature header (t=timestamp,v1=signature,...)
-  const parts = new Map<string, string>();
-  for (const item of signatureHeader.split(",")) {
-    const [key, ...rest] = item.split("=");
-    if (key && rest.length > 0) {
-      parts.set(key.trim(), rest.join("=").trim());
-    }
-  }
-
-  const timestamp = parts.get("t");
-  const expectedSig = parts.get("v1");
-  if (!timestamp || !expectedSig) {
-    return { valid: false, error: "Invalid Stripe-Signature header format" };
-  }
-
-  // Check timestamp tolerance
-  const eventAge = Math.floor(Date.now() / 1000) - Number(timestamp);
-  if (Number.isNaN(eventAge) || eventAge > toleranceSec) {
-    return { valid: false, error: "Webhook timestamp outside tolerance window" };
-  }
-
-  // Compute expected signature: HMAC-SHA256(secret, "timestamp.rawBody")
-  const { createHmac } = await import("node:crypto");
-  const signedPayload = `${timestamp}.${rawBody}`;
-  const computed = createHmac("sha256", secret).update(signedPayload).digest("hex");
-
-  // Constant-time comparison
-  if (computed.length !== expectedSig.length) {
-    return { valid: false, error: "Signature mismatch" };
-  }
-  const { timingSafeEqual } = await import("node:crypto");
-  const a = Buffer.from(computed, "hex");
-  const b = Buffer.from(expectedSig, "hex");
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    return { valid: false, error: "Signature mismatch" };
-  }
-
-  return { valid: true };
+  return { valid: false, error: "Stripe integration removed. Use payment-service.ts." };
 }
 
-/** Handle Stripe webhook events (with optional signature verification). */
+/** @deprecated Stripe removed. Use payment-service.ts instead. */
 export async function handleWebhook(
-  event: {
-    type: string;
-    data: { object: Record<string, unknown> };
-  },
-  opts?: {
-    rawBody?: string;
-    signatureHeader?: string;
-    webhookSecret?: string;
-  },
+  _event: { type: string; data: { object: Record<string, unknown> } },
+  _opts?: { rawBody?: string; signatureHeader?: string; webhookSecret?: string },
 ): Promise<void> {
-  // Verify signature if raw body and signature header are provided
-  if (opts?.rawBody && opts.signatureHeader) {
-    const result = await verifyWebhookSignature(
-      opts.rawBody,
-      opts.signatureHeader,
-      opts.webhookSecret,
-    );
-    if (!result.valid) {
-      throw new Error(`Stripe webhook signature verification failed: ${result.error}`);
-    }
-  }
-
-  const store = await loadStore();
-
-  switch (event.type) {
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const obj = event.data.object as {
-        id: string;
-        status: string;
-        current_period_end?: number;
-      };
-      const sub = store.subscriptions[obj.id];
-      if (sub) {
-        sub.status = obj.status as Subscription["status"];
-        if (obj.current_period_end) {
-          sub.currentPeriodEnd = new Date(obj.current_period_end * 1000).toISOString();
-        }
-        if (sub.status === "canceled") {
-          store.userPlans[sub.userId] = "free";
-        }
-      }
-      break;
-    }
-    case "invoice.payment_failed": {
-      const obj = event.data.object as { subscription?: string };
-      if (obj.subscription) {
-        const sub = store.subscriptions[obj.subscription];
-        if (sub) {
-          sub.status = "past_due";
-        }
-      }
-      break;
-    }
-  }
-
-  await saveStore(store);
+  throw new Error(
+    "Stripe integration removed. Use payment-service.ts (Apple IAP/carrier billing).",
+  );
 }
 
-/** Get the active plan for a user. */
+/** Get the active plan for a user. Still functional (reads local billing store). */
 export async function getActivePlan(userId: string): Promise<Plan> {
   const store = await loadStore();
   const planId = store.userPlans[userId] ?? "free";
   return getPlanById(planId);
 }
 
-/** Check if a user has access to a specific feature. */
+/** Check if a user has access to a specific feature. Still functional. */
 export async function hasFeature(userId: string, feature: string): Promise<boolean> {
   const plan = await getActivePlan(userId);
   return plan.features.includes(feature as Plan["features"][number]);
+}
+
+/**
+ * Set a user's plan directly (used by payment-service.ts after receipt validation).
+ */
+export async function setUserPlan(userId: string, planId: string): Promise<void> {
+  const store = await loadStore();
+  store.userPlans[userId] = planId;
+  await saveStore(store);
 }

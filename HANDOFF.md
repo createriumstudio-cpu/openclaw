@@ -85,35 +85,35 @@ LINE Platform -> ユーザーに配信
 
 ## 3. 技術スタック
 
-| 項目           | 技術                        | 用途                              |
-| -------------- | --------------------------- | --------------------------------- |
-| ランタイム     | Node.js 22+ / Bun           | サーバー実行                      |
-| 言語           | TypeScript (ESM)            | 全ソースコード                    |
-| パッケージ管理 | pnpm                        | 依存関係管理                      |
-| LINE SDK       | `@line/bot-sdk`             | Messaging API型定義・クライアント |
-| 決済           | Stripe API                  | サブスクリプション課金            |
-| カレンダー     | Google Calendar API v3      | スケジュール連携                  |
-| ストレージ     | Google Drive API v3         | ファイル検索・内容取得            |
-| ノート         | Notion API                  | データベース連携                  |
-| 天気           | OpenWeatherMap API          | 天気予報・服装提案                |
-| テスト         | Vitest + V8 coverage        | ユニットテスト                    |
-| Lint/Format    | Oxlint + Oxfmt              | コード品質                        |
-| メモリ検索     | OpenClaw MemoryIndexManager | ベクトル/ハイブリッド検索         |
-| ログ           | OpenClaw SubsystemLogger    | 構造化ログ                        |
+| 項目           | 技術                                | 用途                                 |
+| -------------- | ----------------------------------- | ------------------------------------ |
+| ランタイム     | Node.js 22+ / Bun                   | サーバー実行                         |
+| 言語           | TypeScript (ESM)                    | 全ソースコード                       |
+| パッケージ管理 | pnpm                                | 依存関係管理                         |
+| LINE SDK       | `@line/bot-sdk`                     | Messaging API型定義・クライアント    |
+| 決済           | Apple IAP / キャリア決済 / LINE Pay | サブスクリプション課金（クレカ不要） |
+| カレンダー     | Google Calendar API v3              | スケジュール連携                     |
+| ストレージ     | Google Drive API v3                 | ファイル検索・内容取得               |
+| ノート         | Notion API                          | データベース連携                     |
+| 天気           | OpenWeatherMap API                  | 天気予報・服装提案                   |
+| テスト         | Vitest + V8 coverage                | ユニットテスト                       |
+| Lint/Format    | Oxlint + Oxfmt                      | コード品質                           |
+| メモリ検索     | OpenClaw MemoryIndexManager         | ベクトル/ハイブリッド検索            |
+| ログ           | OpenClaw SubsystemLogger            | 構造化ログ                           |
 
 ---
 
 ## 4. 重要な設計判断とその理由
 
-| 決定事項                 | 理由                                                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| **LINE as UI**           | 日本/台湾/タイでのLINE普及率が圧倒的。ネイティブアプリ開発不要。Flex Message + Quick Replyでリッチなインタラクション実現    |
-| **Reply API無料活用**    | Reply APIは無料（Push APIは従量課金）。`sendMessageLine()` がreplyTokenを優先使用しコスト最適化                             |
-| **session.dmScope**      | DM/グループをポリシーベースで分離。`dmPolicy`と`groupPolicy`で多層アクセス制御                                              |
-| **SOUL.md動的生成**      | Recordルックアップテーブル方式で性格・口調・関係性を独立軸で組み合わせ。100通りの組み合わせを少ないコードで実現             |
-| **Stripe課金**           | Free/Standard/Premium の3段階。`hasFeature()` による機能単位のゲーティングでアップセル                                      |
-| **ファイルベースメモリ** | シンプルで依存なし。`~/.openclaw/line-ai-partner/` 配下にユーザー別ディレクトリ。OpenClawメモリシステムとの橋渡しも実装済み |
-| **OpenClaw実結合**       | `src/line/` の既存型・送信関数を直接import。型の二重管理を避け、LINE APIとの実接続を確保                                    |
+| 決定事項                   | 理由                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **LINE as UI**             | 日本/台湾/タイでのLINE普及率が圧倒的。ネイティブアプリ開発不要。Flex Message + Quick Replyでリッチなインタラクション実現    |
+| **Reply API無料活用**      | Reply APIは無料（Push APIは従量課金）。`sendMessageLine()` がreplyTokenを優先使用しコスト最適化                             |
+| **session.dmScope**        | DM/グループをポリシーベースで分離。`dmPolicy`と`groupPolicy`で多層アクセス制御                                              |
+| **SOUL.md動的生成**        | Recordルックアップテーブル方式で性格・口調・関係性を独立軸で組み合わせ。100通りの組み合わせを少ないコードで実現             |
+| **Apple IAP/キャリア決済** | Stripe→Apple IAP/キャリア決済/LINE Payに移行。若年層向けクレカ不要。`hasFeature()` によるゲーティングは維持                 |
+| **ファイルベースメモリ**   | シンプルで依存なし。`~/.openclaw/line-ai-partner/` 配下にユーザー別ディレクトリ。OpenClawメモリシステムとの橋渡しも実装済み |
+| **OpenClaw実結合**         | `src/line/` の既存型・送信関数を直接import。型の二重管理を避け、LINE APIとの実接続を確保                                    |
 
 ---
 
@@ -123,7 +123,7 @@ LINE Platform -> ユーザーに配信
 | ----------------------------------- | -------- | ------ |
 | LINE Developers Console設定         | 未着手   | 最高   |
 | Webhook URL設定（ドメイン取得+SSL） | 未着手   | 最高   |
-| Stripe本番キー取得・設定            | 未着手   | 高     |
+| Apple IAP/キャリア決済/LINE Pay設定 | 未着手   | 高     |
 | Google OAuth設定（Calendar/Drive）  | 未着手   | 中     |
 | Notion統合設定（OAuth App登録）     | 未着手   | 中     |
 | OpenWeatherMap APIキー取得          | 未着手   | 中     |

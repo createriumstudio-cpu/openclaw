@@ -79,15 +79,20 @@ export {
 export type { Plan, PlanFeature } from "./billing/plans.js";
 export { FREE_PLAN, STANDARD_PLAN, PREMIUM_PLAN, getPlanById, ALL_PLANS } from "./billing/plans.js";
 export type { Subscription } from "./billing/stripe-service.js";
+export { getActivePlan, hasFeature, setUserPlan } from "./billing/stripe-service.js";
+export type {
+  PaymentProvider,
+  PaymentReceipt,
+  ValidationResult,
+  PaymentSubscription,
+} from "./billing/payment-service.js";
 export {
-  createCustomer,
-  createSubscription,
-  cancelSubscription,
-  handleWebhook,
-  verifyWebhookSignature,
-  getActivePlan,
-  hasFeature,
-} from "./billing/stripe-service.js";
+  validateReceipt,
+  checkSubscriptionStatus,
+  handlePaymentWebhook,
+  cancelPaymentSubscription,
+  getAvailablePaymentMethods,
+} from "./billing/payment-service.js";
 export type { UsageStats } from "./billing/usage-tracker.js";
 export { trackMessage, getUsage, resetMonthlyUsage } from "./billing/usage-tracker.js";
 

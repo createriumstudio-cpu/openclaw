@@ -1,6 +1,6 @@
 # LINE AIパートナー — 現時点の状態
 
-> 最終更新: 2026-02-25（Phase 7補完後）
+> 最終更新: 2026-02-26（Stripe→Apple IAP/キャリア決済移行後）
 
 ---
 
@@ -38,34 +38,34 @@
 
 ### 動作するもの（テスト済み・実装済み）
 
-| 機能                         | ファイル                  | 状態                                             |
-| ---------------------------- | ------------------------- | ------------------------------------------------ |
-| SOUL.md動的生成              | `soul-generator.ts`       | 100通りの組み合わせでMarkdown生成                |
-| オンボーディングフロー       | `onboarding.ts`           | 全遷移パス (new -> complete)                     |
-| メッセージルーティング       | `message-router.ts`       | 意図検出+コマンド+会話ルーティング               |
-| スラッシュコマンド           | `command-handler.ts`      | /help, /setting, /weather, /remind等             |
-| プラン定義+機能ゲーティング  | `billing/plans.ts`        | Free/Standard/Premium                            |
-| デイリーレポート生成         | `daily-assistant.ts`      | 天気+予定+服装のフォーマット                     |
-| Flex Messageテンプレート     | `flex-templates.ts`       | レポート/オンボーディング/リマインダーカード     |
-| OpenClaw型整合               | `types.ts`                | LineConfig/ResolvedLineAccount再エクスポート     |
-| OpenClaw Webhook橋渡し       | `integration.ts`          | processPartnerMessage(LineInboundContext)        |
-| OpenClawメモリ検索           | `memory-manager.ts`       | searchConversationMemory()                       |
-| **LLM会話応答**              | `message-router.ts`       | runEmbeddedPiAgent + SOUL.md extraSystemPrompt   |
-| **Gateway登録**              | `monitor.ts`+`channel.ts` | processMessage option + aiPartner.enabled config |
-| **Cron実行エンジン**         | `cron-manager.ts`         | setInterval 60s tick, morning greeting callbacks |
-| **Stripe署名検証**           | `stripe-service.ts`       | HMAC-SHA256 + timing-safe comparison             |
-| **天気API（mock fallback）** | `weather-service.ts`      | API key未設定時は季節ベースmockデータ返却        |
-| **天気予報（3日間）**        | `weather-service.ts`      | getWeatherForecast() 実装済み                    |
+| 機能                         | ファイル                  | 状態                                                |
+| ---------------------------- | ------------------------- | --------------------------------------------------- |
+| SOUL.md動的生成              | `soul-generator.ts`       | 100通りの組み合わせでMarkdown生成                   |
+| オンボーディングフロー       | `onboarding.ts`           | 全遷移パス (new -> complete)                        |
+| メッセージルーティング       | `message-router.ts`       | 意図検出+コマンド+会話ルーティング                  |
+| スラッシュコマンド           | `command-handler.ts`      | /help, /setting, /weather, /remind等                |
+| プラン定義+機能ゲーティング  | `billing/plans.ts`        | Free/Standard/Premium                               |
+| デイリーレポート生成         | `daily-assistant.ts`      | 天気+予定+服装のフォーマット                        |
+| Flex Messageテンプレート     | `flex-templates.ts`       | レポート/オンボーディング/リマインダーカード        |
+| OpenClaw型整合               | `types.ts`                | LineConfig/ResolvedLineAccount再エクスポート        |
+| OpenClaw Webhook橋渡し       | `integration.ts`          | processPartnerMessage(LineInboundContext)           |
+| OpenClawメモリ検索           | `memory-manager.ts`       | searchConversationMemory()                          |
+| **LLM会話応答**              | `message-router.ts`       | runEmbeddedPiAgent + SOUL.md extraSystemPrompt      |
+| **Gateway登録**              | `monitor.ts`+`channel.ts` | processMessage option + aiPartner.enabled config    |
+| **Cron実行エンジン**         | `cron-manager.ts`         | setInterval 60s tick, morning greeting callbacks    |
+| **決済スケルトン**           | `payment-service.ts`      | Apple IAP/キャリア決済/LINE Pay統合インターフェース |
+| **天気API（mock fallback）** | `weather-service.ts`      | API key未設定時は季節ベースmockデータ返却           |
+| **天気予報（3日間）**        | `weather-service.ts`      | getWeatherForecast() 実装済み                       |
 
 ### まだ動かないもの（外部サービス設定待ち）
 
-| 機能                           | 理由                  | 必要な作業                       |
-| ------------------------------ | --------------------- | -------------------------------- |
-| LINE Webhookからの実メッセージ | LINE Developers未設定 | Console設定+Webhook URL+ドメイン |
-| 天気API実データ                | APIキー未設定         | OPENWEATHERMAP_API_KEY設定       |
-| Google Calendar/Drive          | OAuth未設定           | Google Cloud Console設定         |
-| Notion連携                     | OAuth未設定           | Notion Integration設定           |
-| Stripe課金（本番）             | 本番キー未設定        | Stripe Dashboard設定             |
+| 機能                            | 理由                  | 必要な作業                                  |
+| ------------------------------- | --------------------- | ------------------------------------------- |
+| LINE Webhookからの実メッセージ  | LINE Developers未設定 | Console設定+Webhook URL+ドメイン            |
+| 天気API実データ                 | APIキー未設定         | OPENWEATHERMAP_API_KEY設定                  |
+| Google Calendar/Drive           | OAuth未設定           | Google Cloud Console設定                    |
+| Notion連携                      | OAuth未設定           | Notion Integration設定                      |
+| Apple IAP/キャリア決済/LINE Pay | スケルトン実装のみ    | App Store/アグリゲーター/LINE Pay API実接続 |
 
 ---
 
@@ -121,9 +121,9 @@ pnpm check
 | `OAUTH_REDIRECT_URI`        | 自分のドメイン          | OAuth callback URL   |
 | `NOTION_CLIENT_ID`          | Notion Integrations     | Notion OAuth         |
 | `NOTION_CLIENT_SECRET`      | Notion Integrations     | Notion OAuth         |
-| `STRIPE_SECRET_KEY`         | Stripe Dashboard        | 課金処理             |
-| `STRIPE_STANDARD_PRICE_ID`  | Stripe Dashboard        | Standardプラン価格ID |
-| `STRIPE_PREMIUM_PRICE_ID`   | Stripe Dashboard        | Premiumプラン価格ID  |
+| `APP_STORE_CONNECT_KEY_ID`  | App Store Connect       | Apple IAP検証        |
+| `CARRIER_BILLING_API_KEY`   | 決済アグリゲーター      | キャリア決済         |
+| `LINE_PAY_CHANNEL_ID`       | LINE Pay Console        | LINE Pay決済         |
 
 ### .env設定例
 
@@ -132,7 +132,7 @@ pnpm check
 LINE_CHANNEL_ACCESS_TOKEN=your-token
 LINE_CHANNEL_SECRET=your-secret
 OPENWEATHERMAP_API_KEY=your-key
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_STANDARD_PRICE_ID=price_...
-STRIPE_PREMIUM_PRICE_ID=price_...
+APP_STORE_CONNECT_KEY_ID=your-key-id
+CARRIER_BILLING_API_KEY=your-api-key
+LINE_PAY_CHANNEL_ID=your-channel-id
 ```

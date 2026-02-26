@@ -95,37 +95,62 @@ export NOTION_CLIENT_SECRET="your-client-secret"
 
 ---
 
-## Phase 9: Stripe本番設定 + サブスク課金フロー
+## Phase 9: Apple IAP / キャリア決済 / LINE Pay 課金フロー
+
+> Stripe実装は `archive/stripe/` に退避済み。若年層向けにクレカ不要の決済方式に移行。
+
+### 決済プロバイダ
+
+| プロバイダ   | 対象ユーザー             | 実装ファイル                 |
+| ------------ | ------------------------ | ---------------------------- |
+| Apple IAP    | iOSアプリユーザー        | `billing/payment-service.ts` |
+| キャリア決済 | docomo/au/SoftBank契約者 | `billing/payment-service.ts` |
+| LINE Pay     | LINEユーザー全般         | `billing/payment-service.ts` |
 
 ### 手順
 
-1. Stripe Dashboard (https://dashboard.stripe.com/) で本番モード有効化
-2. 商品・価格を作成:
-   - Standard: 月額980円
-   - Premium: 月額1,980円
-3. Webhook エンドポイントを設定: `https://<your-domain>/stripe/webhook`
-4. Webhook署名シークレットを取得
+1. **Apple IAP**: App Store Connect でサブスクリプション商品を作成
+   - Standard: 月額980円 (Auto-Renewable Subscription)
+   - Premium: 月額1,980円 (Auto-Renewable Subscription)
+2. **キャリア決済**: 決済アグリゲーター（SB Payment Service等）と契約
+3. **LINE Pay**: LINE Pay加盟店申請 + API連携設定
 
 ```bash
-export STRIPE_SECRET_KEY="sk_live_..."
-export STRIPE_STANDARD_PRICE_ID="price_..."
-export STRIPE_PREMIUM_PRICE_ID="price_..."
-export STRIPE_WEBHOOK_SECRET="whsec_..."
+# Apple IAP
+export APP_STORE_CONNECT_ISSUER_ID="..."
+export APP_STORE_CONNECT_KEY_ID="..."
+export APP_STORE_CONNECT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+export APP_STORE_BUNDLE_ID="com.yourapp.linepartner"
+
+# キャリア決済（アグリゲーター経由）
+export CARRIER_BILLING_API_KEY="..."
+export CARRIER_BILLING_API_SECRET="..."
+export CARRIER_BILLING_ENDPOINT="https://api.aggregator.example.com"
+
+# LINE Pay
+export LINE_PAY_CHANNEL_ID="..."
+export LINE_PAY_CHANNEL_SECRET="..."
 ```
 
 ### 実装が必要な項目
 
-- [x] `stripe-service.ts` にWebhook署名検証を追加（Phase 7補完で実装済み: `verifyWebhookSignature()`）
-- [ ] `/subscribe` コマンドの実装（Checkout Sessionリンク生成）
+- [x] `payment-service.ts` 統合インターフェース + スケルトン作成
+- [ ] Apple App Store Server API v2 レシート検証の実装
+- [ ] キャリア決済アグリゲーター連携の実装
+- [ ] LINE Pay API v3 連携の実装
+- [ ] `/subscribe` コマンドの実装（決済方法選択 → 各プロバイダへルーティング）
 - [ ] `/plan` コマンドの実装（現在のプラン表示）
+- [ ] App Store Server Notifications v2 Webhook処理
 - [ ] 課金ステータス変更時のLINE通知
 
 ### 検証方法
 
 ```bash
-# Stripe CLIでWebhookテスト
-stripe listen --forward-to localhost:3000/stripe/webhook
-stripe trigger customer.subscription.created
+# Apple IAP: Sandbox環境でテスト
+# Xcode > StoreKit Configuration でローカルテスト可能
+
+# LINE Pay: Sandbox環境
+# https://sandbox-api-pay.line.me/ でテスト
 ```
 
 ---
