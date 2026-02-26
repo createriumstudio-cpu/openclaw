@@ -1,4 +1,5 @@
 // LINE AI Partner – Standalone HTTP server for fly.io deployment
+// Default LLM: claude-sonnet-4-6 (see src/agents/defaults.ts)
 //
 // Handles:
 //   POST /webhook  — LINE webhook events (signature verified)
