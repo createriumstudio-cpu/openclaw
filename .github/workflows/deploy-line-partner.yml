@@ -1,0 +1,23 @@
+name: Deploy LINE AI Partner
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/line-ai-partner-setup-9hqMV
+    paths:
+      - "src/line-ai-partner/**"
+      - "deploy/**"
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy -c deploy/fly.toml --dockerfile deploy/Dockerfile --remote-only --yes
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
