@@ -7,8 +7,8 @@
 // MemoryIndexManager when available.
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { dataDir } from "./data-dir.js";
 import { createStandaloneLogger } from "./standalone-logger.js";
 import type { UserProfile } from "./types.js";
 
@@ -29,16 +29,12 @@ type MemorySearchResult = {
 // Storage paths
 // ---------------------------------------------------------------------------
 
-function baseDir(): string {
-  return join(homedir(), ".openclaw", "line-ai-partner");
-}
-
 function profileDir(): string {
-  return join(baseDir(), "profiles");
+  return join(dataDir(), "profiles");
 }
 
 function memoryDir(userId: string): string {
-  return join(baseDir(), "memory", userId);
+  return join(dataDir(), "memory", userId);
 }
 
 // ---------------------------------------------------------------------------

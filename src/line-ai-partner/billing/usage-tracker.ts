@@ -1,7 +1,7 @@
 // LINE AI Partner – Usage tracking & rate limiting
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { dataDir } from "../data-dir.js";
 import { getActivePlan } from "./stripe-service.js";
 
 // ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ type UsageStore = {
 // ---------------------------------------------------------------------------
 
 function storePath(): string {
-  return join(homedir(), ".openclaw", "line-ai-partner", "usage-store.json");
+  return join(dataDir(), "usage-store.json");
 }
 
 async function loadStore(): Promise<UsageStore> {
@@ -41,7 +41,7 @@ async function loadStore(): Promise<UsageStore> {
 }
 
 async function saveStore(store: UsageStore): Promise<void> {
-  const dir = join(homedir(), ".openclaw", "line-ai-partner");
+  const dir = dataDir();
   await mkdir(dir, { recursive: true });
   await writeFile(storePath(), JSON.stringify(store, null, 2), "utf-8");
 }

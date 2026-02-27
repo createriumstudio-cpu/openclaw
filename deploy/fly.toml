@@ -8,6 +8,11 @@ kill_timeout = "5s"
 [env]
 NODE_ENV = "production"
 PORT = "3000"
+DATA_DIR = "/data"
+
+[mounts]
+source = "line_partner_data"
+destination = "/data"
 
 [http_service]
 internal_port = 3000

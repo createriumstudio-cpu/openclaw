@@ -1,7 +1,7 @@
 // LINE AI Partner – OAuth2 flow manager
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { dataDir } from "../data-dir.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,7 +67,7 @@ const serviceConfigs: Record<string, () => OAuthServiceConfig> = {
 // ---------------------------------------------------------------------------
 
 function storePath(): string {
-  return join(homedir(), ".openclaw", "line-ai-partner", "oauth-tokens.json");
+  return join(dataDir(), "oauth-tokens.json");
 }
 
 async function loadStore(): Promise<TokenStore> {
@@ -80,7 +80,7 @@ async function loadStore(): Promise<TokenStore> {
 }
 
 async function saveStore(store: TokenStore): Promise<void> {
-  const dir = join(homedir(), ".openclaw", "line-ai-partner");
+  const dir = dataDir();
   await mkdir(dir, { recursive: true });
   await writeFile(storePath(), JSON.stringify(store, null, 2), "utf-8");
 }

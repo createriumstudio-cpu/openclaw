@@ -5,8 +5,8 @@
 // models.json, agent dirs, etc.).
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join, dirname } from "node:path";
+import { dataDir } from "./data-dir.js";
 import { createStandaloneLogger } from "./standalone-logger.js";
 
 const log = createStandaloneLogger("line-ai-partner:gemini");
@@ -51,7 +51,7 @@ type GeminiResponse = {
 // ---------------------------------------------------------------------------
 
 function sessionPath(userId: string): string {
-  return join(homedir(), ".openclaw", "line-ai-partner", "sessions", `${userId}.jsonl`);
+  return join(dataDir(), "sessions", `${userId}.jsonl`);
 }
 
 async function loadHistory(userId: string): Promise<Turn[]> {
