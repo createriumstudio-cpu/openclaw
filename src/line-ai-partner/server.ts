@@ -10,6 +10,7 @@
 // with a friendly fallback message.
 //
 // Deploy: push to branch triggers fly.io redeploy via GitHub Actions.
+// GEMINI_API_KEY added to fly.io secrets - deploy trigger
 
 import crypto from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
