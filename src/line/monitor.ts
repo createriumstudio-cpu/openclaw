@@ -8,6 +8,7 @@ import { normalizePluginHttpPath } from "../plugins/http-path.js";
 import { registerPluginHttpRoute } from "../plugins/http-registry.js";
 import type { RuntimeEnv } from "../runtime.js";
 import { deliverLineAutoReply } from "./auto-reply-delivery.js";
+import type { LineInboundContext } from "./bot-message-context.js";
 import { createLineBot } from "./bot.js";
 import { processLineMessage } from "./markdown-to-line.js";
 import { sendLineReplyChunks } from "./reply-chunks.js";
@@ -37,6 +38,9 @@ export interface MonitorLineProviderOptions {
   abortSignal?: AbortSignal;
   webhookUrl?: string;
   webhookPath?: string;
+  /** Optional message handler override. When provided, this replaces the
+   *  default auto-reply pipeline (e.g. for LINE AI Partner mode). */
+  processMessage?: (ctx: LineInboundContext) => Promise<void>;
 }
 
 export interface LineProviderMonitor {
@@ -149,6 +153,9 @@ export async function monitorLineProvider(
     },
   });
 
+  // Custom message handler (e.g. LINE AI Partner mode)
+  const customProcessMessage = opts.processMessage;
+
   // Create the bot
   const bot = createLineBot({
     channelAccessToken: token,
@@ -171,6 +178,16 @@ export async function monitorLineProvider(
           lastInboundAt: Date.now(),
         },
       });
+
+      // If a custom processMessage handler is set, use it instead of auto-reply
+      if (customProcessMessage) {
+        try {
+          await customProcessMessage(ctx);
+        } catch (err) {
+          runtime.error?.(danger(`line: custom processMessage failed: ${String(err)}`));
+        }
+        return;
+      }
 
       const shouldShowLoading = Boolean(ctx.userId && !ctx.isGroup);
 

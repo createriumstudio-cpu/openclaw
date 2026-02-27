@@ -1,0 +1,9 @@
+Initial App Store release of OpenClaw for iOS.
+
+- Gateway discovery via Bonjour, Tailnet, and manual host configuration
+- Voice wake with on-device speech recognition
+- Camera capture, screen recording, and canvas rendering
+- Background location sharing for automations
+- Share extension for forwarding content to your gateway
+- Apple Watch companion app
+- Push notification support via APNs

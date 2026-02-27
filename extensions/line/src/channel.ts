@@ -651,6 +651,31 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
 
       ctx.log?.info(`[${account.accountId}] starting LINE provider${lineBotLabel}`);
 
+      // Check if LINE AI Partner mode is enabled for this account
+      const lineConfig = (ctx.cfg.channels?.line ?? {}) as LineConfig;
+      const aiPartnerEnabled =
+        (lineConfig as Record<string, unknown>).aiPartner != null &&
+        typeof (lineConfig as Record<string, unknown>).aiPartner === "object" &&
+        ((lineConfig as Record<string, unknown>).aiPartner as Record<string, unknown>)?.enabled ===
+          true;
+
+      // oxlint-disable-next-line typescript/no-explicit-any
+      let processMessage: ((inboundCtx: any) => Promise<void>) | undefined;
+      if (aiPartnerEnabled) {
+        try {
+          const { processPartnerMessage } = await import(
+            // Lazy-import to avoid hard dependency when AI Partner is not enabled
+            "../../../src/line-ai-partner/integration.js"
+          );
+          processMessage = processPartnerMessage;
+          ctx.log?.info(`[${account.accountId}] LINE AI Partner mode enabled`);
+        } catch {
+          ctx.log?.debug?.(
+            `[${account.accountId}] LINE AI Partner module not available, using default pipeline`,
+          );
+        }
+      }
+
       return getLineRuntime().channel.line.monitorLineProvider({
         channelAccessToken: token,
         channelSecret: secret,
@@ -659,6 +684,7 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
         runtime: ctx.runtime,
         abortSignal: ctx.abortSignal,
         webhookPath: account.config.webhookPath,
+        processMessage,
       });
     },
     logoutAccount: async ({ accountId, cfg }) => {

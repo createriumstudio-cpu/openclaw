@@ -1,0 +1,50 @@
+{
+  "channels": {
+    "line": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "groupPolicy": "disabled"
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer",
+    "defaults": {
+      "mode": "idle",
+      "idleMinutes": 1440
+    },
+    "reset": {
+      "enabled": true,
+      "cron": {
+        "enabled": true
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": "anthropic/claude-opus-4-6",
+      "citations": "auto"
+    }
+  },
+  "memory": {
+    "enabled": true,
+    "backend": "builtin",
+    "memorySearch": {
+      "enabled": true,
+      "query": {
+        "hybrid": {
+          "enabled": true
+        },
+        "temporalDecay": {
+          "enabled": true,
+          "halfLifeDays": 30
+        }
+      }
+    },
+    "memoryFlush": {
+      "enabled": true
+    },
+    "compaction": {
+      "enabled": true
+    }
+  }
+}

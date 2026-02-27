@@ -1,0 +1,205 @@
+# LINE AIパートナー 技術的知見・学びの記録
+
+> プロジェクト進行中に得られた技術的知見、設計判断の背景、トラブルシューティング事例を記録する。
+
+---
+
+## 2026-02-25: 初期コード調査
+
+### アーキテクチャに関する知見
+
+1. **2層アーキテクチャの利点**
+   - コア実装（`src/line/`）とプラグイン層（`extensions/line/`）の分離により、LINE 固有ロジックがコアに集約されている
+   - プラグイン層は薄いブリッジとして機能し、チャンネル登録・設定スキーマ・CLIコマンドのみを担当
+   - この分離により、他チャンネル（Telegram, Discord 等）と同じプラグインインタフェースを共有できている
+
+2. **マルチアカウント設計**
+   - デフォルトアカウント + 名前付きアカウントの階層構造
+   - トークン解決の優先順位: 直接設定値 → トークンファイル → 環境変数
+   - 環境変数はデフォルトアカウントのみ対応（名前付きアカウントは直接設定が必須）
+
+3. **セキュリティ設計**
+   - HMAC-SHA256 署名検証に定数時間比較を使用（タイミング攻撃対策）
+   - メディアダウンロード時のファイル名はランダム生成（メッセージIDから派生しない）
+   - ペアリングワークフローにより未知の送信者を安全に管理
+
+### LINE API の制約事項
+
+1. **リプライトークン**
+   - 1回限りの使用で、最大5メッセージまで送信可能
+   - 有効期限の明示的なトラッキングは現状なし
+   - 失敗時はプッシュメッセージにフォールバック
+
+2. **メッセージ制限**
+   - テキストメッセージ: 1メッセージあたり5,000文字
+   - Quick Reply: 最大13アイテム（コード上は未バリデーション）
+   - カルーセル: 最大10カラム、各3ボタン
+
+3. **未サポート機能**
+   - リアクション（LINE API の制限）
+   - スレッド（LINE API の制限）
+   - ストリーミング応答（バッファリングで対応、ローディングアニメーションを表示）
+
+### テストに関する知見
+
+1. **Markdown → Flex 変換テスト**が最大（約9,600 LOC）で、テーブル・コードブロック変換の多数のエッジケースをカバー
+2. **モニターテスト**は fail-closed 動作を検証（セキュリティ上重要）
+3. **Postback ハンドリング**のテストカバレッジが薄い点は改善が必要
+
+---
+
+## 2026-02-25: Phase 2-A AIパートナーコアエンジン
+
+### 設計判断
+
+1. **型駆動設計**
+   - `PersonalityType` / `CommunicationStyle` / `RelationshipType` を文字列リテラルユニオンで定義し、コードベース全体の型パターン（`src/line/types.ts` 等）に合わせた
+   - `OnboardingState` を状態マシンとして明示的に型定義し、フロー遷移を型レベルで保証
+
+2. **SOUL.md 動的生成**
+   - テンプレートリテラルではなく `Record<PersonalityType, string>` のルックアップテーブル方式を採用
+   - 性格・口調・関係性を独立した軸として組み合わせ可能にし、5×4×5=100通りのパーソナリティを表現
+   - 日本語のプロンプトテンプレートは自然な口語体を優先
+
+3. **メモリ管理**
+   - OpenClaw の `~/.openclaw/` 配下に `line-ai-partner/` サブディレクトリを作成し、プロファイルと会話メモリを分離
+   - JSON ファイルベースの永続化を採用（将来的に OpenClaw memory API へ移行可能）
+   - ユーザーごとのディレクトリ分離でマルチテナント対応
+
+4. **オンボーディングフロー**
+   - `Map` によるインメモリの部分プロファイル管理（完了時に永続化）
+   - Quick Reply の選択肢は `value`（内部値）と `label`（表示テキスト）の両方でマッチング
+   - 途中離脱しても次回メッセージで続行可能な設計
+
+---
+
+## 2026-02-25: Phase 7補完 — LLM接続・Gateway登録・実行エンジン
+
+### LLM接続（runEmbeddedPiAgent）
+
+**状況**: `message-router.ts` の "conversation" ケースにLLM呼び出しを接続する必要があった
+**対応**: OpenClawの `runEmbeddedPiAgent` を使用。以下がポイント:
+
+- `extraSystemPrompt` パラメータにSOUL.mdの動的生成結果を渡すことで、キャラクター人格を制御
+- `disableTools: true` で tool use を無効化し、純粋な会話応答に限定
+- `sessionFile` をユーザーごと（`~/.openclaw/line-ai-partner/sessions/<userId>.jsonl`）に分離し、会話履歴を維持
+- `messageChannel: "line"` を指定することで、LINE向けフォーマット（markdown非対応）が適用される
+- `timeoutMs: 30_000` で30秒タイムアウト（LINE応答遅延対策）
+  **学び**: `runEmbeddedPiAgent` は重量級だが、`disableTools` + `extraSystemPrompt` で軽量なLLM呼び出しとしても使える。sessionFileにより会話コンテキストが自動的に永続化される
+
+### Gateway登録（processMessage hook）
+
+**状況**: `processPartnerMessage` をLINEのwebhookフローに登録する方法が必要だった
+**対応**: `MonitorLineProviderOptions` に `processMessage?: (ctx: LineInboundContext) => Promise<void>` を追加
+
+- `monitorLineProvider` の `createLineBot` の `onMessage` 内で、`customProcessMessage` が設定されていれば先に呼び出し、default auto-replyをスキップ
+- `extensions/line/src/channel.ts` で `channels.line.aiPartner.enabled` configを参照し、lazy importで `processPartnerMessage` を取得
+  **学び**: `LineInboundContext` は `plugin-sdk` からエクスポートされていない。extension側では `any` 型で受け取り、core側の型定義に依存する回避策を使用。将来的にはplugin-sdkへのエクスポート追加が望ましい
+
+### Cron実行エンジン
+
+**状況**: `cron-manager.ts` はデータ永続化のみで、実際のスケジュール実行がなかった
+**対応**: `setInterval` ベースで60秒ごとにtickする軽量エンジンを実装
+
+- `startCronEngine(callbacks)` / `stopCronEngine()` のシンプルなAPI
+- コールバック方式（`onMorningGreeting`, `onReminder`）で実行ロジックを外部注入
+- 朝挨拶はHH:MM完全一致、リマインダーはcron式 "MM HH \* \* \*" パターンマッチ
+  **学び**: node-cronを追加する代わりにsetIntervalで十分。依存追加なしで実装でき、cron式のパースも「分と時のみ」で簡潔
+
+### Stripe Webhook署名検証
+
+**状況**: `handleWebhook()` が署名検証なしでイベントを処理していた
+**対応**: `verifyWebhookSignature()` を実装（HMAC-SHA256 + timing-safe comparison）
+
+- Stripe-Signatureヘッダーの `t=timestamp,v1=signature` パース
+- timestamp toleranceチェック（デフォルト300秒）
+- `timingSafeEqual` による定数時間比較
+  **学び**: Stripe SDKの `constructEvent` を使わず自前実装した理由は、Stripe SDKへの依存を避けるため。HMAC-SHA256の仕組みはシンプルで、`node:crypto` だけで完結する
+
+### 天気API mock fallback
+
+**状況**: `getWeather()` がAPIキー未設定時にエラーを投げていた
+**対応**: APIキー未設定時は季節ベースのmockデータを返すように変更
+
+- 月ごとの気温ベースライン（東京基準）+ 地名ハッシュによるバリエーション
+- `getWeatherForecast()` も追加（3日間予報）
+  **学び**: 開発環境で外部APIキーなしでもフルフロー動作確認ができるようになった。mockデータでもUI/UXのテストには十分
+
+---
+
+## テンプレート: 新しい知見の記録
+
+```markdown
+## YYYY-MM-DD: タイトル
+
+### カテゴリ（アーキテクチャ/API/バグ/パフォーマンス/セキュリティ）
+
+**状況**: 何が起きたか
+**原因**: なぜ起きたか
+**対応**: どう対応したか
+**学び**: 今後に活かせること
+```
+
+---
+
+## 2026-02-25: プロジェクト全体の振り返り
+
+### アーキテクチャ
+
+1. **モジュール分割** — `src/line-ai-partner/` を機能別サブディレクトリ（`billing/`, `integrations/`）に分割し、各Phase独立でコミット可能にした
+2. **バレルエクスポート** — `index.ts` から全公開APIを再エクスポートし、外部からは `import { ... } from "./line-ai-partner/index.js"` 一行で利用可能
+3. **外部サービス統合** — OAuth2マネージャーを共通化し、Google Calendar/Drive/Notion を同一パターンで実装
+
+### テスト戦略
+
+1. **vi.mock** でファイルI/O依存（memory-manager, weather API）を分離し、純粋なロジックテストに集中
+2. **全性格×口調×関係性** の組み合わせをパラメタライズドテストで網羅（soul-generator.test.ts）
+3. **ステートマシンテスト** — オンボーディングの全遷移パスを検証
+
+### マネタイズ設計
+
+1. **3段階プラン** — Free(50msg)/Standard(無制限)/Premium(全機能) で段階的にアップセル
+2. **機能ゲーティング** — `hasFeature()` で機能単位のアクセス制御、プラン変更時に即反映
+3. **使用量トラッキング** — 月次リセット方式、Cronジョブで `resetMonthlyUsage()` を実行
+
+### デプロイ
+
+1. **Fly.io東京リージョン** — LINEユーザーの大半が日本のため `nrt` を選択
+2. **Docker Compose** — ローカル開発用にapp+redis構成を用意、本番はFly.ioのマネージドRedisを利用
+3. **環境変数テンプレート** — `.env.example` で全変数を文書化、必須/任意を明示
+
+---
+
+## トラブルシューティング事例
+
+### （テンプレート）
+
+| 項目     | 内容       |
+| -------- | ---------- |
+| 発生日   | YYYY-MM-DD |
+| 症状     | -          |
+| 原因     | -          |
+| 解決策   | -          |
+| 再発防止 | -          |
+
+---
+
+## 設計判断の記録
+
+### 決定事項ログ
+
+| 日付       | 決定事項                             | 理由                                                 | 代替案           |
+| ---------- | ------------------------------------ | ---------------------------------------------------- | ---------------- |
+| 2026-02-25 | 既存2層アーキテクチャを維持          | プラグインシステムとの整合性、他チャンネルとの統一性 | モノリシック統合 |
+| 2026-02-25 | 日本語をプロジェクト管理の主要言語に | 対象市場（日本）、開発チームの言語                   | 英語のみ         |
+
+---
+
+## 参考リンク
+
+- [LINE Messaging API ドキュメント](https://developers.line.biz/ja/docs/messaging-api/)
+- [LINE Flex Message シミュレータ](https://developers.line.biz/flex-simulator/)
+- [LINE Bot Designer](https://developers.line.biz/ja/services/bot-designer/)
+- OpenClaw LINE コア実装: `src/line/`
+- OpenClaw LINE プラグイン: `extensions/line/`
+- OpenClaw テストガイド: `docs/testing.md`
